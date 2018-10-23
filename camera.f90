@@ -78,7 +78,7 @@
         character(len=20), dimension(:), intent(in), optional :: &
          kdescs,knames
         real, dimension(:), intent(in), optional:: kvals
-        character(len=200), intent(in) :: outfile
+        character(len=250), intent(in) :: outfile
         integer, dimension(2) :: naxes
         integer :: unit, status, k, nkeyz
         if(cflag==1) then
@@ -169,7 +169,7 @@
         logical, intent(in) :: use_geokerr
         real(kind=8), intent(in) :: mumax,mumin,spin,rcut,mbh,uout,uin, & 
            fmin,fmax,dt,mdotmin,mdotmax,phi0,muval,gmin,gmax,p1,p2,jetalpha
-        character(len=100), intent(in) :: ename,fname,iname,stype
+        character(len=250), intent(in) :: ename,fname,iname,stype
         real(kind=8), dimension(4),intent(in) :: gridvals
         integer, dimension(3), intent(in) :: nn
         character(len=20) :: tch,tcha
@@ -179,7 +179,7 @@
         character(len=20), dimension(:), intent(in), optional :: &
          kdescs,knames
         real, dimension(:), intent(in), optional:: kvals
-        character(len=200), intent(in) :: outfile
+        character(len=250), intent(in) :: outfile
         integer, dimension(2) :: naxes
         integer :: unit, status, k, nkeyz
         if(cflag==1) then

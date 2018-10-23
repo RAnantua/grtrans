@@ -3,11 +3,11 @@
 
        namelist /files/ ifile, ofile
 
-       character(len=200) :: ifile, ofile
-       character(len=40) :: readfile
+       character(len=250) :: ifile, ofile
+       character(len=250) :: readfile
        readfile='files.in'
        open(unit=8,file=readfile)
        read(8,nml=files)
        close(unit=8)
-       call grtrans_run(ifile,ofile)
+       call grtrans_main(ifile,ofile)
        end program

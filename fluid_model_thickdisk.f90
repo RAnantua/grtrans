@@ -11,7 +11,7 @@
       integer :: nx1, nx2, nx3, ndumps, nt, nfiles, indf, defcoord, &
            jonfix, dlen, offset, &
            header_length, field_header_length, dindf, magcrit
-      integer, parameter  :: file_len = 300, sim_len=40, hstr_len=500
+      integer, parameter  :: file_len = 100, sim_len=40, hstr_len=500
       character(len=file_len) :: dfile, gfile
       character(len=40) :: sim
       integer :: n, readthickgrid
@@ -398,7 +398,13 @@
         where(zphi.lt.0.)
            zphi=zphi+2.*pi
         endwhere
+!        where(zphi.gt.(2.*pi))
+!           zphi=zphi-2.*pi
+!        endwhere
+!        write(6,*) 'zphi: ',minval(zphi),maxval(zphi)
         call transformbl2mks(zr,theta,zphi,x1,x2,x3)
+!        write(6,*) 'transform: ',maxval(zr), minval(zr), maxval(x1), minval(x1)
+!        write(6,*) 'transform: ',maxval(theta), minval(theta), minval(x2), maxval(x2)
         lx1=floor((x1-uniqx1(1))/(uniqx1(nx1)-uniqx1(1))*(nx1-1))+1
         ux1=lx1+1
         lx2=floor((x2-uniqx2(1))/(uniqx2(nx2)-uniqx2(1))*(nx2-1))+1
@@ -569,7 +575,7 @@
         end subroutine thickdisk_vals
 
         subroutine read_thickdisk_inputs(ifile)
-        character(len=20), intent(in) :: ifile
+        character(len=100), intent(in) :: ifile
         open(unit=8,file=ifile,form='formatted',status='old')
         read(8,nml=thickdisk)
         write(6,*) 'read: ',nt,nfiles,dindf
@@ -641,7 +647,7 @@
              hslope,localdt,mbhval,qbhval
         integer(4) :: is,ie,js,je,ks,ke,whichdump,whichdumpversion,numcolumns,defcoordval, &
              realtotalsize1,realtotalsize2,realtotalsize3,localrealnstep
-        character(len=300) :: empty,nstr
+        character(len=100) :: empty,nstr
         character(len=2) :: endl
         character(len=header_length) :: dummy
         type (four_vector), dimension(:), allocatable :: u,b
@@ -1193,10 +1199,10 @@
         real(kind=8) :: tcur, tstep_test
         integer :: nx, status, writeall
         integer, intent(in) :: transform
-        character(len=20), intent(in), optional :: ifile
-        character(len=300), intent(in), optional :: simt,gf,df
+        character(len=100), intent(in), optional :: ifile
+        character(len=100), intent(in), optional :: simt,gf,df
         integer, intent(in), optional :: nft,indft,jf,off,ntt,dindft,mct
-        character(len=20) :: default_ifile='thickdisk.in', append
+        character(len=100) :: default_ifile='thickdisk.in', append
         character(len=file_len) :: header_file
         writeall=0
         if (present(gf)) then
