@@ -18,6 +18,7 @@ x=gr.grtrans()
 
 x.write_grtrans_inputs(name+'.in', oname=name+'.out',
                        fname='RRJET',phi0=0.,
+                       betaeconst=1.e-4, ximax=10., 
                        nfreq=1,fmin=43.e9,fmax=43.e9,
                        gmin=10., p2=2.01, p1=2.01,
                        ename='POLSYNCHPL',
