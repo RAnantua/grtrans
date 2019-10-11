@@ -16,7 +16,8 @@
             cflag, extra, debug,outfile, fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix, &
             fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit,frspot,fr0spot,fn0spot,ftscl,frscl, &
             fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol,fmdot,fnscl,fnnthscl,fnnthp,fbeta, &
-            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut,epcoefindx,epotherargs,nepotherargs)
+            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut, betaeconst, ximax, &
+            epcoefindx,epotherargs,nepotherargs)
            
              use omp_lib
        !       use grtrans_inputs
@@ -52,7 +53,7 @@
                  fnr,foffset,fdindf,fmagcrit,fbl06
             real(8), intent(in) :: frspot,fr0spot,fn0spot,ftscl,frscl,fwmin,fwmax,ffmin, &
                  ffmax,frmax,fsigt,ffcol,fmdot,fnnthp,fnnthscl,fnscl,fbeta,ftp,fnp, &
-                 frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut
+                 frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut,betaeconst,ximax
             real(8), dimension(nepotherargs), intent(in) :: epotherargs
 !            integer, intent(in) :: nepcoefindx
             integer, dimension(7), intent(in) :: epcoefindx
@@ -132,6 +133,8 @@
                sparams(iii)%p1=p1
                sparams(iii)%p2=p2
                sparams(iii)%sigcut=sigcut
+               sparams(iii)%betaeconst=betaeconst
+               sparams(iii)%ximax=ximax
                call assign_source_params_type(sparams(iii),stype)
             enddo
             allocate(c(NCAMS))
@@ -140,14 +143,14 @@
                call initialize_raytrace_camera(c(m),nro,nphi,nvals,nextra)
             enddo
             write(6,*) 'welcome to grtrans!'
-            write(6,*) 'fluid args: ',fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix
-            write(6,*) 'fluid args 2: ',fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit
-            write(6,*) 'fluid args 3: ',frspot,fr0spot,fn0spot,ftscl,frscl
-            write(6,*) 'fluid args 4: ',fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol
-            write(6,*) 'fluid args 5: ',fmdot,mbh,fnscl,fnnthscl,fnnthp,fbeta,fbl06
-            write(6,*) 'args: ',mu0,muval,mdots
-            write(6,*) 'args 1: ',freqs
-            write(6,*) 'args 2: ',ename,mbh,uout
+            !write(6,*) 'fluid args: ',fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix
+            !write(6,*) 'fluid args 2: ',fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit
+            !write(6,*) 'fluid args 3: ',frspot,fr0spot,fn0spot,ftscl,frscl
+            !write(6,*) 'fluid args 4: ',fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol
+            !write(6,*) 'fluid args 5: ',fmdot,mbh,fnscl,fnnthscl,fnnthp,fbeta,fbl06
+            !write(6,*) 'args: ',mu0,muval,mdots
+            !write(6,*) 'args 1: ',freqs
+            !write(6,*) 'args 2: ',ename,mbh,uout
 !            write(6,*) 'args all: ',standard,mumin,mumax,nmu,phi0,spin,&
 !            uout,uin, rcut, nrotype, gridvals, nn,fname, dt, nt, nload, &
 !            nmdot, mdotmin, mdotmax,ename, mbh, nfreq, fmin, fmax, muval,&
@@ -158,13 +161,13 @@
             call assign_fluid_args(fargs,fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix, &
             fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit,frspot,fr0spot,fn0spot,ftscl,frscl, &
             fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol,fmdot,mbh,fnscl,fnnthscl,fnnthp,fbeta, &
-            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut)
-            write(6,*) 'load fluid model ',fname,spin
+            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut,betaeconst,ximax)
+            write(6,*) 'load fluid model ',fname
             call load_fluid_model(fname,spin,fargs)
 
             if(nup.eq.1.and.nvals.eq.4) call load_chandra_tab24()
-            write(6,*) 'mu loop: ',nro,nphi,nup,standard,nmu
-            write(6,*) 'mu loop: ',mu0
+            !write(6,*) 'mu loop: ',nro,nphi,nup,standard,nmu
+            !write(6,*) 'mu loop: ',mu0
             do j=1,nmu
                call initialize_geokerr_args(gargs,nro*nphi)
                call initialize_pixels(gargs,use_geokerr,standard,mu0(j),phi0,spin,uout,uin, &
@@ -173,7 +176,7 @@
                   ! loop over geodesics calculating first point to get t0 for everything
                   gargs%nup=1
                   write(6,*) 'grtrans nload gt 1 loop',size(gargs%t0),allocated(gargs%t0),gargs%nup
-                  write(6,*) 'i1 i2: ',i1,i2
+                  !write(6,*) 'i1 i2: ',i1,i2
                   !$omp parallel do private(i) shared(gargs)
 !                  do i=1,c(1)%nx*c(1)%ny
                   do i=i1,i2
@@ -194,18 +197,20 @@
                wtime = omp_get_wtime()
                do l=1,nt
                   !       write(6,*) 'pre loop spin: ',spin,gargs%a
-!$omp parallel do schedule(static,1) private(i) shared(gargs,gunit,c,j,nt,l,spin, &
-!$omp& iname,ename,fname,sparams,eparams,nfreq,nparams,freqs,nup,i1,i2,extra,debug)
+!!!!$omp parallel do schedule(static,1) private(i) shared(gargs,gunit,c,j,nt,l,spin, &
+!!!!!$omp& iname,ename,fname,sparams,eparams,nfreq,nparams,freqs,nup,i1,i2,extra,debug)
+!*$* ASSERT DO(SERIAL)
                   do i=i1,i2
 !                     write(6,*) 'i: ',i,iname,ename
 !                  do i=15501,15999
                      !                 write(6,*) 'i: ',i
 !                write(6,*) 'after loop spin: ',mdots(1),mbh
+!                     write(6,*) 'i1 i2: ',i1,i2
                      call grtrans_driver(gargs,gunit,c,i,(j-1)*nt+l,iname,ename,fname, &
                      sparams,eparams,nfreq,nparams,freqs,nup,extra,debug)
                   enddo
 !       write(6,*) 'after loop i'
-!$omp end parallel do
+!!!!$omp end parallel do
 !       write(6,*) 'del geokerr args before'
                   if(l.lt.nt) call advance_fluid_timestep(fname,dt)
                enddo

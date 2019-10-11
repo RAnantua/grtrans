@@ -129,13 +129,15 @@
 !            write(6,*) 'comoving ortho grtrans driver: ',s2xi,c2xi,'\n'
             call initialize_rad_trans(r,iname,g%npts,c(1)%nvals,extra)
             call init_radtrans_integrate_data(r%iflag,r%neq,g%npts,r%npts)
+
+            
             do m=1,nparams
                sp=sparams(m)
-!               write(6,*) 'grtrans_driver sp: ',sp%nfac,sp%gminval
+!              write(6,*) 'grtrans_driver sp: ',sp%nfac,sp%gminval,m,nparams
                call initialize_source_params(sp,g%npts)
                call initialize_emis_params(ep,g%npts)
                call initialize_emissivity(e,g%npts,f%nfreq,rshift,ang,cosne,f%nrelbin,f%bingammamin,f%bingammamax)!,emisargs)
-               !write(6,*) 'f%nrelbin',f%nrelbin
+!               write(6,*) 'after initialize'
                !               write(6,*) 'm: ',m,nparams,sparams(m)%mdot,size(sparams)
 !               allocate(sparams(m)%gmin(npts))
                MBH=sp%mbh
@@ -166,7 +168,7 @@
 !                  write(6,*) 'ej2: ',e%j(:,2)
 !                  write(6,*) 'ej4: ',e%j(:,4)
                   if(any(isnan(e%j))) then
-                     write(6,*) 'NaN in emissivity at i: ',i
+                     !write(6,*) 'NaN in emissivity at i: ',i
 !                     write(6,*) 'NaN in emissivity where: ',maxloc(isnan(e%j))
 !                     write(6,*) 'NaN in emissivity where: ',maxloc(isnan(e%K))
                      !write(6,*) 'NaN in emissivity fac LBH: ',fac,LBH

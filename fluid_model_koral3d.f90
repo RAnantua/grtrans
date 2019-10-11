@@ -131,6 +131,7 @@
         zphi=zpp
         zphi=mod(zphi,(2.*pi))
         !zphi=bl2ks(dble(zr),dble(zpp),dble(a)) !???  AC is this right for KORAL?
+
         where(zphi.lt.0.)
             zphi=zphi+2.*pi
         endwhere
@@ -406,7 +407,7 @@
         real(8), dimension(:,:), allocatable :: grid, data, tmetric
         integer :: i, nelem
 
-        shortfile = .TRUE.
+        shortfile = .FALSE.
 
           !AC TODO still need to change these positions for 3d sim files!!
           if(nrelbin>0) then

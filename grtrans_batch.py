@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 # f2py grtrans module
-from pgrtrans import pgrtrans
+#from pgrtrans import pgrtrans
 from time import time
 #plt.ion()
 
@@ -55,6 +55,8 @@ class grtrans_inputs:
         self.gmax=1e5
         self.p1=3.5
         self.p2=3.5
+        self.betaeconst=1.e-4
+        self.ximax=10.
         self.epotherargs=[1.,1.]
         self.epcoefindx=[1,1,1,1,1,1,1]
         self.jetalpha=0.02
@@ -182,7 +184,7 @@ class grtrans_inputs:
         names=['geodata','fluiddata','emisdata','general','harm','analytic'] #!AC ? 
         args=['standard','mumin','mumax','nmu','phi0','spin','uout','uin','rcut','nrotype','gridvals','nn','i1','i2','extra','debug']
         nargs=[len(args)]
-        args1=['fname','dt','nt','nload','nmdot','mdotmin','mdotmax','sigcut']
+        args1=['fname','dt','nt','nload','nmdot','mdotmin','mdotmax','sigcut','betaeconst','ximax']
         nargs.append(len(args1))
         args2=['ename','mbh','nfreq','fmin','fmax','muval','gmin','gmax','p1','p2','jetalpha','stype','delta','nweights','coefindx']
         nargs.append(len(args2))
@@ -211,7 +213,7 @@ class grtrans_inputs:
 #        nnstr = str(self.nn[0])+','+str(self.nn[1])+','+str(self.nn[2])
 #        gridstr = str(self.gridvals[0])+','+str(self.gridvals[1])+','+str(self.gridvals[
         vals=[self.standard,self.mumin,self.mumax,self.nmu,self.phi0,self.spin,self.uout,self.uin,self.rcut,self.nrotype,gridstr,nnstr,self.i1,self.i2,self.extra,self.debug]
-        vals.extend(["'"+self.fname+"'",self.dt,self.nt,self.nload,self.nmdot,self.mdotmin,self.mdotmax,self.sigcut])
+        vals.extend(["'"+self.fname+"'",self.dt,self.nt,self.nload,self.nmdot,self.mdotmin,self.mdotmax,self.sigcut,self.betaeconst,self.ximax])
         vals.extend(["'"+self.ename+"'",self.mbh,self.nfreq,self.fmin,self.fmax,self.muval,self.gmin,self.gmax,self.p1,self.p2,self.jetalpha,"'"+self.stype+"'",self.delta,self.nweights,cindxstr])
         vals.extend([self.use_geokerr,self.nvals,"'"+self.iname+"'",self.cflag])
         print(self.fname)
@@ -305,6 +307,9 @@ class grtrans_inputs:
             nargsj=[len(argsj)]
 #            nm.write_namelist('ffjet.in',namesj,argsj,valsj,nargsj)
             self.fdfile = self.jdfile
+        elif self.fname=='RRJET':
+            namesj=['rrjet']
+            vals
         elif self.fname=='NUMDISK':
             namesn=['numdisk']
             valsn=["'"+self.ndfile+"'",self.ntscl,self.nrscl]

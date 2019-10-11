@@ -9,7 +9,8 @@
       use fluid_model_toy, only: toy_vals, init_toy, del_toy
       use fluid_model_powerlaw, only: powerlaw_vals, init_powerlaw, del_powerlaw
       use fluid_model_ffjet, only: initialize_ffjet_model, del_ffjet_data, &
-                                    ffjet_vals
+           ffjet_vals
+      use fluid_model_rrjet, only: init_rrjet, rrjet_vals      
       use fluid_model_phatdisk, only: phatdisk_vals, init_phatdisk, del_phatdisk, freq_tab
       use fluid_model_thindisk, only: thindisk_vals, init_thindisk
       use fluid_model_numdisk, only: initialize_numdisk_model, del_numdisk_data, &
@@ -38,7 +39,7 @@
       integer, parameter :: DUMMY=0,SPHACC=1,THINDISK=2,RIAF=3,HOTSPOT=4,PHATDISK=5,SCHNITTMAN=6
       integer, parameter :: COSMOS=10,MB=11,HARM=12,FFJET=13,NUMDISK=14,THICKDISK=15,MB09=16
       integer, parameter :: SARIAF=17,POWERLAW=18,HARM3D=19,HARMPI=20,TOY=21,KORAL=22,KORALNTH=23, &
-           SHELL=24,KORAL3D=25,KORAL3D_DISK=26,KORAL3D_TOPJET=27,KORAL3D_BOTJET=28
+           SHELL=24,KORAL3D=25,KORAL3D_DISK=26,KORAL3D_TOPJET=27,KORAL3D_BOTJET=28, RRJET=29
 
       integer :: nrelbin=0
       real :: bingammamin=1., bingammamax=1.
@@ -60,14 +61,15 @@
               dindf,magcrit,bl06
          real(8) :: rspot,r0spot,n0spot,tscl,rscl,wmin,wmax,fmin, &
               fmax,rmax,sigt,fcol,mdot,mbh,nscl,nnthscl,nnthp,beta, &
-              np,tp,rin,rout,thin,thout,phiin,phiout,scalefac,sigcut
+              np,tp,rin,rout,thin,thout,phiin,phiout,scalefac,sigcut, &
+              betaeconst,ximax
       end type
 
 ! added sigcut here instead of in fluid
       type source_params
 !        real(kind=8), dimension(:), allocatable :: mdot,lleddeta,mu
         real(kind=8) :: nfac,bfac,mbh,mdot,p1,p2,gmax,gminval, &
-             jetalphaval,muval,sigcut
+             jetalphaval,muval,sigcut,ximax,betaeconst
         real(kind=8), dimension(:), allocatable :: gmin,jetalpha,mu
         integer :: type
       end type
@@ -132,14 +134,14 @@
         subroutine assign_fluid_args(fargs,dfile,hfile,gfile,sim,nt,indf,nfiles,jonfix, &
              nw,nfreq_tab,nr,offset,dindf,magcrit,rspot,r0spot,n0spot,tscl,rscl, &
              wmin,wmax,fmin,fmax,rmax,sigt,fcol,mdot,mbh,nscl,nnthscl,nnthp,beta,bl06,np,tp, &
-             rin,rout,thin,thout,phiin,phiout,scalefac,sigcut)
+             rin,rout,thin,thout,phiin,phiout,scalefac,sigcut,betaeconst,ximax)
           type (fluid_args), intent(inout) :: fargs
           character(len=100), intent(in) :: dfile,hfile,gfile,sim
           integer, intent(in) :: nt,indf,nfiles,jonfix,nw,nfreq_tab,nr,offset,dindf, &
                magcrit,bl06
           real(8), intent(in) :: rspot,r0spot,n0spot,tscl,rscl,wmin,wmax,fmin, &
                fmax,rmax,sigt,fcol,mdot,mbh,nscl,nnthscl,nnthp,beta,np,tp, &
-               rin,rout,thin,thout,phiin,phiout,scalefac,sigcut
+               rin,rout,thin,thout,phiin,phiout,scalefac,sigcut,betaeconst,ximax
           write(6,*) 'in fluid args'
           fargs%dfile = dfile; fargs%hfile = hfile; fargs%gfile=gfile
           fargs%sim = sim; fargs%nt = nt; fargs%indf = indf; fargs%nfiles = nfiles
@@ -154,8 +156,9 @@
           fargs%beta = beta; fargs%bl06 = bl06; fargs%np = np; fargs%tp=tp
           fargs%rin = rin; fargs%rout = rout; fargs%thin = thin
           fargs%thout = thout; fargs%phiin = phiin; fargs%phiout = phiout
-          write(6,*) 'after assign fluid args: ',sigcut
-          fargs%scalefac=scalefac; fargs%sigcut=sigcut
+!          write(6,*) 'after assign fluid args: ',sigcut
+          fargs%scalefac=scalefac; fargs%sigcut=sigcut;
+          fargs%betaeconst=betaeconst; fargs%ximax=ximax
         end subroutine assign_fluid_args
 
         subroutine load_fluid_model(fname,a,fargs)
@@ -235,6 +238,10 @@
         elseif(fname=='SCHNITTMAN') then
            call init_schnittman_hotspot(ifile,real(fargs%rspot),real(fargs%r0spot) &
                 ,real(fargs%n0spot))
+        elseif(fname=='RRJET') then
+          !write(6,*) 'load', ifile
+          call init_rrjet(fargs%betaeconst, fargs%ximax)
+           
         endif
         end subroutine load_fluid_model
 
@@ -340,6 +347,8 @@
                  f%bingammamax=bingammamax 
               elseif(fname=='FFJET') then
                  f%model=FFJET
+              elseif(fname=='RRJET') then
+                 f%model=RRJET                 
               elseif(fname=='SPHACC') then
                  f%model=SPHACC
               elseif(fname=='RIAF') then
@@ -396,8 +405,7 @@
         elseif(fname=='KORALNTH') then
            call del_koral_data() 
         elseif(fname=='FFJET') then
-    !      write(6,*) 'load'
-           call del_ffjet_data()
+           call del_ffjet_data()          
         elseif(fname=='PHATDISK') then
            call del_phatdisk()
         elseif(fname=='NUMDISK') then
@@ -439,12 +447,10 @@
         type (four_vector), intent(in) :: x0, k0
         type (fluid), intent(inout) :: f
         real(kind=8), intent(in) :: a
- ! !      write(6,*) 'fluid: ',size(x0),f%model
         SELECT CASE(f%model)
           CASE (SPHACC)
 !            call get_sphacc_fluidvars(x0,f)
           CASE (FFJET)
-!      !      write(6,*) 'made it'
 !            call get_ffjet_fluidvars(x0,real(a),f)
           CASE (THINDISK)
 !            call initialize_thindisk_model(f)
@@ -465,8 +471,9 @@
           CASE (SPHACC)
             call get_sphacc_fluidvars(x0,f)
           CASE (FFJET)
-      !      write(6,*) 'made it'
-            call get_ffjet_fluidvars(x0,real(a),f)
+             call get_ffjet_fluidvars(x0,real(a),f)
+          CASE (RRJET)
+            call get_rrjet_fluidvars(x0,real(a),f)             
           CASE (THINDISK)
             call get_thindisk_fluidvars(x0,k0,real(a),f)
           CASE (PHATDISK)
@@ -521,7 +528,9 @@
           CASE (SPHACC)
             call convert_fluidvars_sphacc(f,ncgs,ncgsnth,bcgs,tcgs,sp)
           CASE (FFJET)
-            call convert_fluidvars_ffjet(f,ncgs,ncgsnth,bcgs,tcgs,sp)
+             call convert_fluidvars_ffjet(f,ncgs,ncgsnth,bcgs,tcgs,sp)
+          CASE (RRJET)
+            call convert_fluidvars_rrjet(f,ncgs,ncgsnth,bcgs,tcgs,sp)             
           CASE (THINDISK)
             call convert_fluidvars_thindisk(f,tcgs,ncgs)
           CASE(PHATDISK)
@@ -668,6 +677,14 @@
 !        write(6,*) 'ffjet u: ',f%u*f%u, f%b*f%b
         end subroutine get_ffjet_fluidvars
 
+        subroutine get_rrjet_fluidvars(x0,a,f)
+        type (four_Vector), intent(in), dimension(:) :: x0
+        real, intent(in) :: a
+        type (fluid), intent(inout) :: f
+        ! Computes properties of jet model from Anantua et al (2019)
+        call rrjet_vals(x0,a,f%rho,f%p,f%b,f%u,f%bmag)
+        end subroutine get_rrjet_fluidvars
+       
         subroutine get_harm_fluidvars(x0,a,f)
         type (four_Vector), intent(in), dimension(:) :: x0
         real, intent(in) :: a
@@ -1029,7 +1046,8 @@
 ! allow scaling w/ Mdot
 !        write(6,*) 'convert koral nfac: ', sp%nfac,sp%sigcut,sp%gminval
         bcgs=bcgs*sqrt(sp%nfac)
-        ncgs=ncgs*sp%nfac; rhocgs=rhocgs*sp%nfac
+        ncgs=ncgs*sp%nfac; 
+        rhocgs=rhocgs*sp%nfac;
 ! changed to allow postprocessing Monika model
         if(sp%gminval.ge.1d0) then
            beta_trans = 1d0
@@ -1103,10 +1121,34 @@
         real(kind=8), dimension(size(f%rho)), &
           intent(out) :: ncgs,ncgsnth,bcgs,tcgs
         type (source_params), intent(in) :: sp
-        !real :: bfac=70., nfac=2.
 !        write(6,*) 'sp: ',sp%nfac, sp%bfac
         ncgsnth=f%rho*sp%nfac; bcgs=f%bmag*sp%bfac; ncgs=0.; tcgs=0.
         end subroutine convert_fluidvars_ffjet
+
+        subroutine convert_fluidvars_rrjet(f,ncgs,ncgsnth,bcgs,tcgs,sp)
+
+        type (fluid), intent(in) :: f
+        real(kind=8), dimension(size(f%rho)), &
+             intent(out) :: ncgs,ncgsnth,bcgs,tcgs
+        real ::  prefac
+        type (source_params), intent(in) :: sp
+
+
+        ! nonthemal number density
+        prefac = 3.*(sp%p2-2.) / ((sp%p2-1.)*m*c2*sp%gminval)
+        ncgsnth= prefac * f%p
+
+        ! field strength
+        bcgs=f%bmag !*sp%bfac;
+
+        !write(6,*) 'prefac', prefac
+        !write(6,*) 'max n', maxval(ncgsnth)
+        !write(6,*) 'max b', maxval(bcgs)
+        !write(6,*) 'max p', maxval(f%p)
+        
+        !temperature and thermal energy density is zero
+        ncgs=ncgsnth; tcgs=0.
+        end subroutine convert_fluidvars_rrjet
 
         subroutine convert_fluidvars_hotspot(f,ncgs,ncgsnth,bcgs,tcgs,sp)
         type (fluid), intent(in) :: f
@@ -1593,19 +1635,14 @@
              case (TAIL)
                 sp%jetalpha=sp%jetalphaval
                 sp%mu=sp%muval
-!Fluid -> calc_gmin -> mu*tcgs -> emis means that calc_gmin is given a tcgs pre-mu correction and needs to be corrected here.                 
+                !Fluid -> calc_gmin -> mu*tcgs -> emis means that calc_gmin is given a tcgs
+                ! pre-mu correction and needs to be corrected here.                 
                 call calc_gmin_subroutine(sp%p2,sp%mu*k*tcgs/m/c/c,sp%jetalpha,gmin,x)
-!                sp%gmin=merge(merge(gmin,one,gmin.ge.1d0),gmax/2d0,gmin.le.gmax)
-!                trust calc_gmin to merge gmin < 1 now
                 sp%gmin=merge(gmin,gmax/2d0,gmin.le.gmax)
                 factor=merge(one,(gmax/2d0/gmin)**(sp%p2 - 2.),gmin.le.gmax)
-!when gmin is corrected for being too large, multiply ncgsnth by a corrective factor. The correction (1-p) is already applied, so the correction p-2 is needed.
+                !when gmin is corrected for being too large, multiply ncgsnth by a corrective factor.
+                !The correction (1-p) is already applied, so the correction p-2 is needed.
                 ncgsnth=factor * merge(x*ncgs*sp%gmin**(1.-sp%p2),zero,x.gt.0d0)
-!ncgsnth proportional to gamma**-1
-!                sp%gmin=gmin
-!                where(ncgsnth.ne.ncgsnth)
-!                   ncgsnth=-1e8
-!                endwhere
 !                write(6,*) 'gmin ncgsnth tail: ',minval(sp%gmin),maxval(sp%gmin),minval(ncgsnth),maxval(ncgsnth)
 !                write(6,*) 'gmin ncgsnth tail: ',gmin
 !                write(6,*) 'gmin ncgsnth tail x: ',x

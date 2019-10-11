@@ -5,7 +5,6 @@
       real(kind=8), dimension(:), allocatable :: gxvals, xvals
       real(kind=8), dimension(:), allocatable :: gyvals,ypvals,yvvals,yavals, &
        yavvals,yapvals
-!$omp threadprivate(gxvals,xvals,gyvals,ypvals,yvvals,yavals,yavvals,yapvals)
       contains
 
       function gxnum(x,p,ix,iy) result(yy)
@@ -64,6 +63,7 @@
       integer :: nx
       two=2; one=1; zero=0
       nx=size(xv)
+      
       ! First interpolate to G(x) locations for all p arrays:
       xx=log(x); ix=int((xx-xv(1))/(xv(nx)-xv(1))*(nx))
 !      write(6,*) 'find inds: ',x,p,xx,xv(1:5)
@@ -79,13 +79,14 @@
       real(kind=8), dimension(size(x)) :: yy,slope,yix,xix,yix1,xix1,xx
       xx=log(x); indx=iy*size(xv)+ix
 !      write(6,*) 'indx: ',iy,ix,size(xv),indx,size(yv)
+
       ! Then interpolate between these to choose appropriate p:
       yix=yv(indx) ; yix1=yv(indx+1) ; xix1=xv(ix+1)
       xix=xv(ix)
       slope=(yix1-yix)/(xix1-xix)
       yy=yix+slope*(xx-xix)
       yy=exp(yy)
-!!      write(6,*) 'xix: ',xx,xix,xix1,yy,yix
+!      write(6,*) 'xix: ',xx,xix,xix1,yy,yix
       end function interp_gxp
 
       subroutine del_polsynchpl(n)
@@ -524,7 +525,7 @@
       use phys_constants, ec=>e
       ! Compute polarized synch from PL dist from Westford (1959)
       ! JAD 4/7/2011
-!      type (emis), intent(in) :: vars
+
       real(kind=8), intent(in), dimension(:) :: b
       real(kind=8), intent(in), dimension(:) :: nnth,th,p
       real(kind=8), intent(in), dimension(:) :: nu,gmin
@@ -750,6 +751,7 @@
       wp2=4d0*pi*n*ec**2/m
       omega0=ec*B/m/c
       xarg=thetae*sqrt(sqrt(2d0)*sin(theta)*(1d3*omega0/2d0/pi/nu))
+      
 ! my slightly modified versions
       !eps11m22=jffunc(xarg)*wp2*omega0**2/(2d0*pi*nu)**4* &
       !(beselk(1d0/thetae,1)/beselk(1d0/thetae,2)+6d0*thetae)* &
@@ -776,18 +778,6 @@
               (1d0+6d0*thetae)*sin(theta)**2
          eps12=wp2*omega0/(2d0*pi*nu)**3*cos(theta)
       end where
-
-!AC ANDREW for low temperature/low thetae lets turn off faraday 
-!      where(thetae.lt.1d-6)
-!         eps11m22=0.
-!         eps12=0.
-!      elsewhere
-!         eps11m22=jffunc(xarg)*wp2*omega0**2/(2d0*pi*nu)**4* &
-!         (beselk(1d0/thetae,1)/beselk(1d0/thetae,2)+6d0*thetae)* &
-!         sin(theta)**2
-!         eps12=wp2*omega0/(2d0*pi*nu)**3* &
-!         (beselk(1d0/thetae,0)-shgmfunc(xarg))/beselK(1d0/thetae,2)*cos(theta)
-!      endwhere
 
 ! s08 versions
 !      eps11m22=shffunc(xarg)*wp2*omega0**2/(2d0*pi*nu)**4* &
@@ -849,7 +839,7 @@
 !      write(6,*) 'emis ang nu: ',theta(testindx),nu(testindx)
 !      write(6,*) 'emis n b t: ',n(testindx),thetae(testindx),b(testindx)
 !      write(6,*) 'ai: ',ai, e(:,5), e(:,1), ji
- !     write(6,*) 'reshape: ',maxval(emis(:,1)), maxval(emis(:,5))
+!      write(6,*) 'reshape: ',maxval(emis(:,1)), maxval(emis(:,5))
       if(any(isnan(jq))) then
          write(6,*) 'NaN in polsynchemis.f90'
          !write(6,*) 'xm: ',xm
@@ -872,7 +862,9 @@
         end function shffunc
 
         function jffunc(x)
-          ! Fitting function F(X) from Shcherbakov (2008), modified to match Jones & Hardee small \nu/\nu_c limit. See 12/9/2014 notes.
+          ! Fitting function F(X) from Shcherbakov (2008),
+          ! modified to match Jones & Hardee small \nu/\nu_c limit.
+          ! See 12/9/2014 notes.
           real(kind=8), intent(in), dimension(:) :: x
           real(kind=8), dimension(size(x)) :: jffunc,extraterm
           extraterm=(.011d0*exp(-x/47.2d0)-2d0**(-1d0/3d0)/3d0**(23d0/6d0)*pi*1d4*&
@@ -952,7 +944,6 @@
       subroutine synchemis(nu,n,B,T,e)
       ! To calculate the synchotron emissivity in cgs units
       ! Uses approximation from Mahadevan et al (1996)
-      !
       ! JAD 11/25/2008
       use phys_constants, only: k, m, c, c2, ec=>e, pi
       real(kind=8), dimension(:), intent(in) :: nu,n,B,T
@@ -991,11 +982,11 @@
       end subroutine synchemis
 
       subroutine synchemisnoabs(nu,n,T,B,e)
-!     To calculate the synchotron emissivity in cgs units with no absorption
+      ! To calculate the synchotron emissivity in cgs units with no absorption
       real(kind=8), dimension(:), intent(in) :: nu,n,T,B
       real(kind=8), dimension(size(nu),11), intent(out) :: e
       call synchemis(nu,n,T,B,e)
-! now set absorption coefs = 0
+      ! now set absorption coefs = 0
       e(:,5:11)=0.
       end subroutine synchemisnoabs
 
@@ -1006,7 +997,7 @@
       use phys_constants, only: h,c2,k
       real(kind=8), intent(in), dimension(:) :: T,nu
       real(kind=8), dimension(size(T)) :: bnu
-!      write(6,*) 'bnu: ',T,nu
+!      write(6,*) 'bnu: ', T, nu
       where(h*nu/k/T.lt.1d-6)
          bnu = 2d0*nu*nu*k*T/c2
       elsewhere
@@ -1019,7 +1010,7 @@
 
       end function bnu
 
-      !AC emissivity for sampled distribution
+      !AC emissivity for finitely sampled distribution
       !AC define gammas outside of this function before it's called.
       subroutine synchbinemis(nu, n, B, theta, gammas, delta_gammas, e)
 
@@ -1076,7 +1067,6 @@
          !write(6,*) 'kx: ', size(gammas), minval(kxs), maxval(kxs)
          !write(6,*) 'Ij: ', size(gammas), minval(intj), maxval(intj)
          !write(6,*) jnu(i)
-
          
       end do
 

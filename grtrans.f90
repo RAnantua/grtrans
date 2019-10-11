@@ -32,7 +32,7 @@
        knames(3)='nu'; kdescs(3)='Frequency (Hz)'
        gunit=12
        call read_inputs(ifile)
-       write(6,*) 'dfile: ',fdfile
+       write(6,*) 'ifile: ',ifile
 ! overlapping code with pgrtrans
 ! call grtrans_main here with correct argument list
        call grtrans_main(standard,mumin,mumax,nmu,phi0,spin,&
@@ -42,8 +42,9 @@
             cflag, extra, debug,outfile,fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix, &
             fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit,frspot,fr0spot,fn0spot,ftscl,frscl, &
             fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol,fmdot,fnscl,fnnthscl,fnnthp,fbeta, &
-            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut,coefindx, &
-            epotherargs,nepotherargs)
+            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut, &
+            betaeconst, ximax, &
+            coefindx, epotherargs,nepotherargs)
 ! if you want to use pgrtrans ivals, ab, freqs then do so before here
        call del_pgrtrans_data()
 ! this is now done directly in pgrtrans

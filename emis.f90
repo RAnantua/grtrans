@@ -1,4 +1,3 @@
-
        module emissivity
        use math
        use polsynchemis, only: initialize_polsynchpl,polsynchpl, &
@@ -8,7 +7,7 @@
        use calc_maxcomp, only: calc_maxcomp_subroutine
        implicit none
 
-! Global constants for selecting emissivity
+       ! Global constants for selecting emissivity
        integer,parameter :: ELAMBDA=0,ESYNCHTH=1,EPOLSYNCHTH=2, &
                   ESYNCHPL=3,EPOLSYNCHPL=4,EBREMS=5,ELINE=6, &
                   EIRON=7,EBB=8,EBBPOL=9,EINTERP=10,EFBB=11,ERHO=12, &
@@ -24,12 +23,10 @@
          real(kind=8) :: gmax,fcol
          real(kind=8) :: bingammamax, bingammamin
          real(kind=8), dimension(:), allocatable :: cosne,gmin
-!         real(kind=8), dimension(:), allocatable :: args
          integer :: neq,nk,npts,type,nfreq,nrelbin
        end type emis
 
        type emis_params
-!         real :: gmin,mu
          real :: gmax,p1,p2
          integer :: nfreq_tab
          real(8), dimension(:), allocatable :: otherargs
@@ -385,19 +382,18 @@
              allocate(e%ncgs(npts)); allocate(e%tcgs(npts))
              allocate(e%bcgs(npts))
              allocate(e%ncgsnth(npts)); allocate(e%p(npts))
-             call initialize_polsynchpl(e%neq) !I guess this is right?
+             call initialize_polsynchpl(e%neq) 
            CASE (EHYBRIDPL) !Power Law decomposition of the Hybrid Image
              allocate(e%ncgs(npts)); allocate(e%tcgs(npts))
              allocate(e%bcgs(npts))
              allocate(e%ncgsnth(npts)); allocate(e%p(npts))
-             call initialize_polsynchpl(e%neq) !I guess this is right?
+             call initialize_polsynchpl(e%neq) 
            CASE (EMAXJUTT) !alwinnote 2015/03/05
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
-             allocate(e%bcgs(npts))!; allocate(e%args(npts))
+             allocate(e%bcgs(npts))
            CASE (EMAXCOMP) !alwinnote 2015/03/05
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
-             allocate(e%bcgs(npts))!; allocate(e%args(npts))
-!             e%args=emisargs
+             allocate(e%bcgs(npts))
            CASE (EPOLSYNCHTH)
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
              allocate(e%bcgs(npts))
@@ -407,7 +403,6 @@
              allocate(e%ncgsnth(npts)); allocate(e%p(npts))
              call initialize_polsynchpl(e%neq)
            CASE (ESYNCHPL)
-!             write(6,*) 'init epl: ',allocated(e%ncgs),allocated(e%tcgs)
              allocate(e%ncgs(npts)); allocate(e%tcgs(npts))
              allocate(e%bcgs(npts))
              allocate(e%ncgsnth(npts)); allocate(e%p(npts))
@@ -415,19 +410,19 @@
            CASE (ESYNCHTHAV)
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
              allocate(e%bcgs(npts))
-          CASE (ESYNCHTHBREMS)
+           CASE (ESYNCHTHBREMS)
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
              allocate(e%bcgs(npts))       
-          CASE (EBREMS)
+           CASE (EBREMS)
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
-          CASE (EBINS) !AC hybrid thermal/nonthermal pop in bins
+           CASE (EBINS) !AC hybrid thermal/nonthermal pop in bins
              e%nrelbin=nrelbin
              e%bingammamax=bingammamax
              e%bingammamin=bingammamin
              allocate(e%relel_gammas(e%nrelbin));
              allocate(e%delta_relel_gammas(e%nrelbin));
              allocate(e%bcgs(npts)); allocate(e%nnthcgs(npts,nrelbin))                          
-          CASE (EHYBRIDTHBINS) !AC hybrid thermal/nonthermal pop in bins
+           CASE (EHYBRIDTHBINS) !AC hybrid thermal/nonthermal pop in bins
              e%nrelbin=nrelbin
              e%bingammamax=bingammamax
              e%bingammamin=bingammamin
@@ -435,7 +430,7 @@
              allocate(e%delta_relel_gammas(e%nrelbin));
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
              allocate(e%bcgs(npts)); allocate(e%nnthcgs(npts,nrelbin))             
-          CASE (ESYNCHTHAVNOABS)
+           CASE (ESYNCHTHAVNOABS)
              allocate(e%tcgs(npts)); allocate(e%ncgs(npts))
              allocate(e%bcgs(npts))
            CASE (EBB)
@@ -484,44 +479,33 @@
               K = Kpl !get power law emission
               K(:,5:11) = Kth(:,5:11) + Kpl(:,5:11) !and total absorption
            case(epolsynchth)
-!              write(6,*) 'polsynchth ncgs: ',allocated(e%ncgs),size(e%ncgs)
-!              write(6,*) 'polsynchth bcgs: ',e%bcgs
-!              write(6,*) 'polsynchth tcgs: ',e%tcgs
              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,K)
            case(epolsynchpl)
-!              write(6,*) 'ppl nu', nu
-!             write(6,*) 'ppl n', e%ncgsnth
-!             write(6,*) 'ppl b',e%bcgs
-!             write(6,*) 'ppl i',e%incang
-!             write(6,*) 'ppl p',e%p
              call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
               e%gmax,K)
              if(any(isnan(K))) then
-                write(6,*) 'NaN in polsynch sizes: ', &
-                     e%npts,size(nu), &
-                     size(e%ncgsnth),size(e%bcgs),size(e%incang),size(e%p), &
-                     size(e%gmin),size(K,1),size(K,2)
-                write(6,*) 'NaN in polsynchpl K8: ',K(:,8)
-                write(6,*) 'NaN in polsynchpl K9: ',K(:,9)
-                write(6,*) 'NaN in polsynchpl nu: ',nu
-                write(6,*) 'NaN in polsynchpl ang: ',e%incang
-                write(6,*) 'NaN in polsynchpl n: ',e%ncgsnth
-                write(6,*) 'NaN in polsynchpl B: ',e%bcgs
-                write(6,*) 'NaN in polsynchpl p: ',e%p
-                write(6,*) 'NaN in polsynchpl gmin: ',e%gmin
+                !write(6,*) 'NaN in polsynch sizes: ', &
+                !     e%npts,size(nu), &
+                !     size(e%ncgsnth),size(e%bcgs),size(e%incang),size(e%p), &
+                !     size(e%gmin),size(K,1),size(K,2)
+                !write(6,*) 'NaN in polsynchpl K8: ',K(:,8)
+               !write(6,*) 'NaN in polsynchpl K9: ',K(:,9)
+               !write(6,*) 'NaN in polsynchpl nu: ',nu
+               !write(6,*) 'NaN in polsynchpl ang: ',e%incang
+               !write(6,*) 'NaN in polsynchpl n: ',e%ncgsnth
+               !write(6,*) 'NaN in polsynchpl B: ',e%bcgs
+               !write(6,*) 'NaN in polsynchpl p: ',e%p
+               !write(6,*) 'NaN in polsynchpl gmin: ',e%gmin
              endif
-           case(ebins) !A should inclination angle be added to thermal synch???
+           case(ebins) 
              call synchbinemis(nu, e%nnthcgs, e%bcgs, e%incang, e%relel_gammas, e%delta_relel_gammas, K)
-           case(ehybridthbins) !AC should inclination angle be added to thermal synch???
+           case(ehybridthbins) 
               call synchemis(nu, e%ncgs, e%bcgs, e%tcgs, Kth)
-              !call brememisHEROIC(nu,e%ncgs,e%tcgs,Kbr) !AC brem emission
               call synchbinemis(nu, e%nnthcgs, e%bcgs, e%incang, e%relel_gammas, e%delta_relel_gammas, Kpl)
-             K = Kth + Kpl !+ Kbr
+             K = Kth + Kpl !+ Kbr !AC -- removed brememis!
            case(esynchpl)
              call synchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
               e%gmax,K)
-!             write(6,*) 'synchpl: ',e%ncgsnth,e%bcgs,K(:,1)
-!             write(6,*) 'synchpl sum: ',sum(K(:,1))
            case(esynchthav)
               call synchemis(nu,e%ncgs,e%bcgs,e%tcgs,K)
            case(esynchthbrems)
@@ -535,16 +519,14 @@
            case(ebb)
              call bbemis(nu,e%tcgs,K)
            case(ebbpol)
-!              write(6,*) 'call bbpolemis: ',size(e%tcgs),size(K,1),size(K,2), size(nu)
              call fbbpolemis(nu,e%tcgs,e%fcol,e%cosne,K)
            case(erho)
               call rhoemis(e%ncgs,e%rshift,K)
            case(einterp)
-!              write(6,*) 'interpemis no abs: ',size(nu), size(e%freqarr), size(e%fnu)
-!              write(6,*) 'interpemis K: ',size(K,1), size(K,2)
              call interpemis_noabs(nu,e%freqarr,e%fnu,K)
          end select
 !         write(6,*) 'afterpolsynch', e%bcgs, e%ncgs, e%tcgs, K(1:e%npts,1)
+         
          if (e%neq==4) then
            e%j(1:e%npts,1:e%neq)=K(1:e%npts,1:e%neq)
            if (allocated(ep%usecoefs)) &
@@ -630,8 +612,6 @@
                  endif
               enddo
            endif
-!           write(6,*) 'emis coefindx: ',ep%coefindx,ep%usecoefs
-!           allocate(ep%args(n))
          end subroutine initialize_emis_params
 
          subroutine del_emis_params(ep)
@@ -639,7 +619,6 @@
            deallocate(ep%gmin)
            deallocate(ep%mu)
            if(allocated(ep%usecoefs)) deallocate(ep%usecoefs)
-!           deallocate(ep%args)
          end subroutine del_emis_params
 
          subroutine polsynchemis_wrapper(nu,e)
@@ -647,7 +626,6 @@
          real(kind=8), intent(in), dimension(:) :: nu
          real(kind=8), dimension(e%npts,11) :: K, Kth, Kpl
 !         write(6,*) 'polsynch', size(K), size(e%bcgs), size(nu)
-   !      write(6,*) size(e%ncgs), size(e%tcgs), size(e%incang),e%npts
          select case(e%type)
            case(ehybridthpl)
              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,Kth)
@@ -675,7 +653,7 @@
               write(6,*) 'polsynchth tcgs: ',e%tcgs
              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,K)
            case(epolsynchpl)
-       !      write(6,*) 'ppl', e%ncgsnth, e%bcgs, e%incang, e%p
+!             write(6,*) 'ppl', e%ncgsnth, e%bcgs, e%incang, e%p
              call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
               e%gmax,K)
            case(esynchpl)
@@ -725,7 +703,6 @@
            CASE (EMAXCOMP) !alwinnote 2015/07/22
              deallocate(e%tcgs); deallocate(e%ncgs)
              deallocate(e%bcgs); deallocate(e%incang)
-!             deallocate(e%args)
            CASE (EPOLSYNCHTH)
              deallocate(e%tcgs); deallocate(e%ncgs)
              deallocate(e%bcgs); deallocate(e%incang)
@@ -733,6 +710,7 @@
              deallocate(e%ncgs); deallocate(e%tcgs)
              deallocate(e%bcgs); deallocate(e%incang)
              deallocate(e%ncgsnth); deallocate(e%p)
+             !write(6,*) 'del polsynchpl'
              call del_polsynchpl(e%neq)
            CASE (ESYNCHPL)
              deallocate(e%ncgs); deallocate(e%tcgs)
@@ -791,20 +769,19 @@
          rhoq=e%K(:,5); rhou=e%K(:,6)
 !         write(6,*) 'c2xi: ',c2xi
 !         write(6,*) 's2xi: ',s2xi
+
 ! if bcgs = 0, get NaN s2xi,c2xi. set to arbitrary angle.
 !         where(e%bcgs.eq.0d0)
 !            c2xi=1d0
 !            s2xi=0d0
 !         endwhere
+
          e%j(:,2)=c2xi*jq-s2xi*ju
          e%j(:,3)=s2xi*jq+c2xi*ju
          e%K(:,2)=c2xi*aq-s2xi*au
          e%K(:,3)=s2xi*aq+c2xi*au
          e%K(:,5)=c2xi*rhoq-s2xi*rhou
          e%K(:,6)=s2xi*rhoq+c2xi*rhou
-!         e%j(:,3)=s2xi*e%j(:,2); e%j(:,2)=c2xi*e%j(:,2)
-!         e%K(:,3)=s2xi*e%K(:,2)+c2xi*e%K(:,3); e%K(:,2)=c2xi*e%K(:,2)-s2xi*e%K(:,3)
-!         e%K(:,6)=s2xi*e%K(:,5); e%K(:,5)=c2xi*e%K(:,5)
          if(any(isnan(e%j).or.any(isnan(e%K)))) then
             write(6,*) 'NaN in rotate_emis!'
 !            write(6,*) 's2xi: ',s2xi
@@ -830,7 +807,6 @@
          real(kind=8), dimension(:), intent(in) :: g
          integer :: i
          integer, intent(in) :: npow
-!         e%rshift=g
          do i=1,e%neq; e%j(:,i)=e%j(:,i)*g**npow; enddo
          end subroutine invariant_intensity
 
@@ -838,9 +814,9 @@
          type (emis), intent(inout) :: e
          type (emis_params), intent(in) :: ep
          SELECT CASE (e%type)
-           CASE (EBINS) !AC ??
+           CASE (EBINS) !AC 
              call emis_model_bins(e, e%bingammamin, e%bingammamax, e%nrelbin)
-           CASE (EHYBRIDTHBINS) !AC ??
+           CASE (EHYBRIDTHBINS) !AC 
              !call emis_model_syncth(e,ep%mu) !AC we want mu=1 always, so don't run this
              call emis_model_bins(e, e%bingammamin, e%bingammamax, e%nrelbin)
            CASE (EHYBRIDTHPL)
@@ -888,7 +864,6 @@
            end do
            relel_gammas_e(nrelbin+1)=relgammamax
            e%delta_relel_gammas(nrelbin) = relgammamax - relel_gammas_e(nrelbin)
-
            !write(6,*) maxval(e%relel_gammas)
            !write(6,*) maxval(e%delta_relel_gammas)
          end subroutine emis_model_bins
@@ -897,9 +872,7 @@
          type (emis), intent(inout) :: e
          real, intent(in) :: gmax,p
          real, intent(in), dimension(:) :: gmin
- !        write(6,*) 'em: ',gmin,gmax,p
          e%p=p; e%gmin=gmin; e%gmax=gmax
-!         e%ncgsnth=e%ncgs
          end subroutine emis_model_synchpl
 
          subroutine emis_model_interp(e,nfreq,freq)
@@ -911,8 +884,6 @@
          subroutine emis_model_synchth(e,mu)
          type (emis), intent(inout) :: e
          real, dimension(:), intent(in) :: mu
-! e- temp is now handled in convert_fluid
-!         e%tcgs=e%tcgs*mu
          end subroutine emis_model_synchth
 
          subroutine emis_model_lambda(e)

@@ -1,5 +1,4 @@
   module fluid_model_thindisk
-! Standard NT73 thin disk model
 
   use class_four_vector
   use kerr, only: calc_rms, krolikc, ledd
