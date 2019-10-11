@@ -82,11 +82,6 @@ module fluid_model_rrjet
         Vr = s*Vs/zr + z*Vz/zr
         Vth = z*Vs/(zr*zr) - s*Vz/(zr*zr)
 
-        ! Zero everything where xi>ximax
-        where(xi>ximax)
-           Br=dzero; Bth=dzero; Bphi=dzero;
-           Vr=dzero; Vth=dzero; Vphi=dzero;
-        endwhere
 
         ! Find u0 and convert V -> u
         metric = kerr_metric(zr,real(x0%data(3)),a)
@@ -142,12 +137,26 @@ module fluid_model_rrjet
 
 !        write(6,*) 'leaving rrjet vals',bmag
 !        write(6,*) 'udotu: ',u*u
+
+        ! Zero everything where xi>ximax
+        where(xi>ximax)
+           u%data(1) = dzero;
+           u%data(2) = dzero;
+           u%data(3) = dzero;
+           u%data(4) = dzero;
+           b%data(1) = dzero;
+           b%data(2) = dzero;
+           b%data(3) = dzero;
+           b%data(4) = dzero;
+           rho = dzero;
+           bmag=dzero;
+           p=dzero;
+        endwhere
         
 ! ANDREW ??
 ! Cut off emission from below eq. plane:
         rho=merge(rho,rho*0.,zm.ge.0)
         p = merge(p,p*0.,zm.ge.0)
-        
         end subroutine rrjet_vals
     
         subroutine init_rrjet(betaeconst0, ximax0)
