@@ -56,18 +56,17 @@ module fluid_model_rrjet
           xi=1.e10
         endwhere
                 
-        ! Get magnetic flux, fluid line angular velocity, and current
-        ! ANDREW ?? normalization?? 
+        ! Get magnetic flux, fluid line angular velocity, and current 
         omega = 0.15*exp(-0.3*xi*xi)
-        phi = tanh(0.3*xi) ! AC conversion factor??
-        phiprime = 0.3*(1.- phi*phi) ! AC conversion factor??
+        phi = tanh(0.3*xi) 
+        phiprime = 0.3*(1.- phi*phi) 
         current = -2.*omega*xi*phiprime
 
         ! Get the B-field vector in cylindrical coordinates
         ! AC make flux through  horizon / normalization a free parameter ?? 
-        Bs = 1.e4*s*phiprime / (2.*pi*z*z)
-        Bz = 1.e4*phiprime / (2.*pi*z)
-        Bphi = 1.e4*current / (2*pi*s)
+        Bs = 1.e4 * s*phiprime / (2.*pi*z*z)
+        Bz = 1.e4 * phiprime / (2.*pi*z)
+        Bphi = 1.e4 * current / (2*pi*s)
         Bphi = Bphi / s !AC ?? -- put in coordinate basis
         
         ! Get the three-velocity in cylindrical coordinates
@@ -142,16 +141,16 @@ module fluid_model_rrjet
 
         ! Zero everything where xi>ximax
         where(xi>ximax)
-           u%data(1) = dzero;
-           u%data(2) = dzero;
-           u%data(3) = dzero;
-           u%data(4) = dzero;
-           b%data(1) = dzero;
-           b%data(2) = dzero;
-           b%data(3) = dzero;
-           b%data(4) = dzero;
+           !u%data(1) = dzero;
+           !u%data(2) = dzero;
+           !u%data(3) = dzero;
+           !u%data(4) = dzero;
+           !b%data(1) = dzero;
+           !b%data(2) = dzero;
+           !b%data(3) = dzero;
+           !b%data(4) = dzero;
            rho = dzero;
-           bmag=dzero;
+           !bmag=dzero;
            p=dzero;
         endwhere
         
