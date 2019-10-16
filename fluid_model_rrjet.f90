@@ -1,4 +1,6 @@
 ! Anantua 2019 semianalytic jet model
+! Check conversion to cgs units!
+
 module fluid_model_rrjet
 
       use class_four_vector
