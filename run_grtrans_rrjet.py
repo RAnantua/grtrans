@@ -15,7 +15,7 @@ name = 'rrjet'+str(ang)
 mu = np.cos(ang*np.pi/180.)
 size  = 200.
 uout = 1./(5*size)
-npix = 256
+npix = 100
 ngeo = 1000
 
 cmperMpc = 3.086e24
