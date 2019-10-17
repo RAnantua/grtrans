@@ -13,10 +13,10 @@ import scipy.ndimage.filters as filt
 ang=20
 name = 'rrjet'+str(ang)
 mu = np.cos(ang*np.pi/180.)
-size  = 200.
+size  = 100.
 uout = 1./(5*size)
 npix = 100
-ngeo = 1000
+ngeo = 500
 
 cmperMpc = 3.086e24
 MBH = 6.7e9
@@ -29,7 +29,7 @@ psize_rad = psize_cm / DTOBH
 RF = 43.e9
 cfun = 'jet'
 cfun2 =  'seismic'
-RERUN = True
+RERUN = False
 
 def main():
     # run grtrans
@@ -64,7 +64,7 @@ def main():
     #x.disp_pol_map()
 
 
-def display_grtrans_image(x,nvec=20,veccut=0,blur_kernel=1.1):
+def display_grtrans_image(x,nvec=20,veccut=0.005,blur_kernel=1.25):
     plt.close('all')
 
     I_im = x.ivals[:,0,0].reshape(npix,npix)
@@ -169,9 +169,9 @@ def display_grtrans_image(x,nvec=20,veccut=0,blur_kernel=1.1):
 
     # display m
     plt.figure(5)
-    im = plt.imshow(m_im, cmap=plt.get_cmap(cfun), interpolation='gaussian')
+    im = plt.imshow(m_im, cmap=plt.get_cmap('viridis'), interpolation='gaussian')
     cb = plt.colorbar(im, fraction=0.046, pad=0.04, orientation="vertical")
-    cb.set_label('Tb (K)', fontsize=14)
+    cb.set_label('P/I', fontsize=14)
     plt.title(("P/I, %.2f GHz " % (RF/1e9)), fontsize=16)
     plt.xticks(xticks[0], xticks[1])
     plt.yticks(yticks[0], yticks[1])
