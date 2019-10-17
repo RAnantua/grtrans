@@ -29,7 +29,7 @@ psize_rad = psize_cm / DTOBH
 RF = 43.e9
 cfun = 'jet'
 cfun2 =  'seismic'
-RERUN = False
+RERUN = True
 
 def main():
     # run grtrans
