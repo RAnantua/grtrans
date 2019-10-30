@@ -128,9 +128,15 @@
         tt=-tt+1d-8
 
         zpp=x0%data(4)
-        zphi=zpp
+        !!zphi=zpp
+        !!zphi=mod(zphi,(2.*pi))
+        
+        !!  AC this is necessary for koral dumps that keep phi output in ks!!
+        zphi=bl2ks(dble(zr), dble(zpp), dble(a))
         zphi=mod(zphi,(2.*pi))
-        !zphi=bl2ks(dble(zr),dble(zpp),dble(a)) !???  AC is this right for KORAL?
+        if(any(isnan(zphi))) then
+           write(6,*) 'nan in zphi!'
+        end if
 
         where(zphi.lt.0.)
             zphi=zphi+2.*pi
