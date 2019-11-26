@@ -38,7 +38,7 @@
        call grtrans_main(standard,mumin,mumax,nmu,phi0,spin,&
             uout,uin, rcut, nrotype, gridvals, nn,i1,i2,fname, dt, nt, nload, &
             nmdot, mdotmin, mdotmax,ename, mbh, nfreq, fmin, fmax, muval,&
-            gmin, gmax,p1, p2, jetalpha, stype,use_geokerr, nvals, iname,&
+            gmin, gmax,p1, p2, fpositron,jetalpha, stype,use_geokerr, nvals, iname,&
             cflag, extra, debug,outfile,fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix, &
             fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit,frspot,fr0spot,fn0spot,ftscl,frscl, &
             fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol,fmdot,fnscl,fnnthscl,fnnthp,fbeta, &

@@ -85,7 +85,7 @@
 ! use FITS
           write(6,*) cnum, ncams, outunit, size(c%pixloc), &
        size(c%pixvals)
-          write(6,*) 'FITS ', outfile
+          !write(6,*) 'FITS ', outfile
           if(cnum==1) then
             call create_fits(unit,outfile,status)
             if(status.ne.0) write(6,*) 'Create error', status
@@ -159,7 +159,7 @@
          uout,uin, rcut, nrotype, gridvals, nn, &
          fname, dt, nt, nload, nmdot, mdotmin, mdotmax, &
          ename, mbh, nfreq, fmin, fmax, muval, gmin, gmax,&
-         p1, p2, jetalpha, stype, &
+         p1, p2, fpositron,jetalpha, stype, &
          use_geokerr, nvals, iname, extra)
 
 
@@ -168,7 +168,7 @@
         integer, intent(in) :: standard,nrotype,nvals,nfreq,nmu,cflag, nt,nmdot,nload,extra
         logical, intent(in) :: use_geokerr
         real(kind=8), intent(in) :: mumax,mumin,spin,rcut,mbh,uout,uin, & 
-           fmin,fmax,dt,mdotmin,mdotmax,phi0,muval,gmin,gmax,p1,p2,jetalpha
+           fmin,fmax,dt,mdotmin,mdotmax,phi0,muval,gmin,gmax,p1,p2,fpositron,jetalpha
         character(len=100), intent(in) :: ename,fname,iname,stype
         real(kind=8), dimension(4),intent(in) :: gridvals
         integer, dimension(3), intent(in) :: nn
@@ -186,7 +186,7 @@
 ! use FITS
           write(6,*) cnum, ncams, outunit, size(c%pixloc), &
        size(c%pixvals)
-          write(6,*) 'FITS ', outfile
+          !write(6,*) 'FITS ', outfile
           if(cnum==1) then
             call create_fits(unit,outfile,status)
             if(status.ne.0) write(6,*) 'Create error', status
@@ -284,6 +284,8 @@
           call aftpkyd(unit,tch,p1,6,tch,status)
           tch = 'p2'
           call aftpkyd(unit,tch,p2,6,tch,status)
+          tch = 'fpositron'
+          call aftpkyd(unit,tch,fpositron,6,tch,status)          
           tch = 'jetalpha'
           call aftpkyd(unit,tch,jetalpha,6,tch,status)
           tch = 'stype'

@@ -19,6 +19,8 @@
 
            double precision, dimension(size(ncgs),11) :: ktemp
            double precision, dimension(size(ncgs),11),intent(out) :: ktotal
+           real(kind=8) fpositron
+           
 !           ones = 1d0
 !           write(6,*) 'maxjutt: ',size(maxjutt_args),size(weights_arr)
            a = 3d0
@@ -57,8 +59,10 @@
            ktotal = 0d0
            do i=1,size(weights_arr)
               ktemp = 0d0
-!              write(6,*) 'calc_maxjutt call polsynchth: ',weights_arr(i),ncgs(1),bcgs(1),tcgs_min(1)*delta_arr(1),incang(1)
-              call polsynchth(nu,weights_arr(i)*ncgs,bcgs,tcgs_min*delta_arr(i),incang,ktemp)
+              !              write(6,*) 'calc_maxjutt call polsynchth: ',weights_arr(i),ncgs(1),bcgs(1),tcgs_min(1)*delta_arr(1),incang(1)
+              !AC - set fpositron=0.
+              fpositron=0d0
+              call polsynchth(nu,weights_arr(i)*ncgs,bcgs,tcgs_min*delta_arr(i),incang,fpositron,ktemp)
               ktotal = ktotal + ktemp
            enddo
 !           write(6,*) 'maxjutt loop: ',tcgs_min,delta_arr,i,size(weights_arr)

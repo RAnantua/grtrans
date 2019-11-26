@@ -21,14 +21,14 @@
          real(kind=8), dimension(:), allocatable :: ncgs,bcgs,&
               tcgs,incang,p,ncgsnth,rshift,freqarr,fnu,deltapol,psipol
          real(kind=8), dimension(:), allocatable :: relel_gammas, delta_relel_gammas 
-         real(kind=8) :: gmax,fcol
+         real(kind=8) :: gmax,fcol,fpositron
          real(kind=8) :: bingammamax, bingammamin
          real(kind=8), dimension(:), allocatable :: cosne,gmin
          integer :: neq,nk,npts,type,nfreq,nrelbin
        end type emis
 
        type emis_params
-         real :: gmax,p1,p2
+         real :: fpositron,gmax,p1,p2
          integer :: nfreq_tab
          real(8), dimension(:), allocatable :: otherargs
          real, dimension(:), allocatable :: freq_tab,gmin,mu
@@ -466,29 +466,29 @@
            case(emaxcomp)
               call calc_maxcomp_subroutine(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,ep%otherargs,K)
            case(ehybridthpl)
-              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,Kth)
+              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,Kth)
               call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-               e%gmax,Kpl)
+               e%gmax,e%fpositron,Kpl)
               K = Kth + Kpl
            case(ehybridth)
-              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,Kth)
+              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,Kth)
               call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-               e%gmax,Kpl)
+               e%gmax,e%fpositron,Kpl)
               K = Kth !get thermal emission
               K(:,5:11) = Kth(:,5:11) + Kpl(:,5:11) !and total absorption
            case(ehybridpl)
-              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,Kth)
+              call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,Kth)
               call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-               e%gmax,Kpl)
+               e%gmax,e%fpositron,Kpl)
               K = Kpl !get power law emission
               K(:,5:11) = Kth(:,5:11) + Kpl(:,5:11) !and total absorption
            case(epolsynchth)
-             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,K)
+             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,K)
            case(epolsynchsymth)
               call sympolemisth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,K)
            case(epolsynchpl)
              call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-              e%gmax,K)
+              e%gmax,e%fpositron,K)
              if(any(isnan(K))) then
                 !write(6,*) 'NaN in polsynch sizes: ', &
                 !     e%npts,size(nu), &
@@ -636,21 +636,21 @@
 !         write(6,*) 'polsynch', size(K), size(e%bcgs), size(nu)
          select case(e%type)
            case(ehybridthpl)
-             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,Kth)
+             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,Kth)
              call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-              e%gmax,Kpl)
+              e%gmax,e%fpositron,Kpl)
              K = Kth + Kpl
            case(ehybridth)
-             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,Kth)
+             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,Kth)
              call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-              e%gmax,Kpl)
+              e%gmax,e%fpositron,Kpl)
              K = Kth
              K(:,5:11) = Kth(:,5:11) + Kpl(:,5:11)
 
            case(ehybridpl)
-             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,Kth)
+             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,Kth)
              call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-              e%gmax,Kpl)
+              e%gmax,e%fpositron,Kpl)
              K = Kpl
              K(:,5:11) = Kth(:,5:11) + Kpl(:,5:11)
 
@@ -659,11 +659,11 @@
               write(6,*) 'polsynchth ncgs: ',e%ncgs
               write(6,*) 'polsynchth bcgs: ',e%bcgs
               write(6,*) 'polsynchth tcgs: ',e%tcgs
-             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,K)
+             call polsynchth(nu,e%ncgs,e%bcgs,e%tcgs,e%incang,e%fpositron,K)
            case(epolsynchpl)
 !             write(6,*) 'ppl', e%ncgsnth, e%bcgs, e%incang, e%p
              call polsynchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
-              e%gmax,K)
+              e%gmax,e%fpositron,K)
            case(esynchpl)
              call synchpl(nu,e%ncgsnth,e%bcgs,e%incang,e%p,e%gmin, &
               e%gmax,K)
@@ -831,26 +831,26 @@
              !call emis_model_syncth(e,ep%mu) !AC we want mu=1 always, so don't run this
              call emis_model_bins(e, e%bingammamin, e%bingammamax, e%nrelbin)
            CASE (EHYBRIDTHPL)
-             call emis_model_synchth(e,ep%mu)
-             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1)
+             call emis_model_synchth(e,ep%mu,ep%fpositron)
+             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1,ep%fpositron)
            CASE (EHYBRIDTH) !alwinnote
-             call emis_model_synchth(e,ep%mu)
-             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1)
+             call emis_model_synchth(e,ep%mu,ep%fpositron)
+             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1,ep%fpositron)
            CASE (EHYBRIDPL) !alwinnote
-             call emis_model_synchth(e,ep%mu)
-             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1)
+             call emis_model_synchth(e,ep%mu,ep%fpositron)
+             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1,ep%fpositron)
            CASE (EMAXJUTT) !alwinnote 2015/03/05
-             call emis_model_synchth(e,ep%mu)
+             call emis_model_synchth(e,ep%mu,ep%fpositron)
            CASE (EMAXCOMP) !alwinnote 2015/07/22
-             call emis_model_synchth(e,ep%mu)
+             call emis_model_synchth(e,ep%mu,ep%fpositron)
            CASE (EPOLSYNCHTH)
-             call emis_model_synchth(e,ep%mu)
+             call emis_model_synchth(e,ep%mu,ep%fpositron)
            CASE (EPOLSYNCHSYMTH)
-             call emis_model_synchth(e,ep%mu)
+             call emis_model_synchth(e,ep%mu,ep%fpositron)
            CASE (EPOLSYNCHPL)
-             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1)
+             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1,ep%fpositron)
            CASE (ESYNCHPL)
-             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1)
+             call emis_model_synchpl(e,ep%gmin,ep%gmax,ep%p1,ep%fpositron)
            CASE (EINTERP)
              call emis_model_interp(e,ep%nfreq_tab,ep%freq_tab)
          END SELECT
@@ -881,11 +881,11 @@
            !write(6,*) maxval(e%delta_relel_gammas)
          end subroutine emis_model_bins
          
-         subroutine emis_model_synchpl(e,gmin,gmax,p)
+         subroutine emis_model_synchpl(e,gmin,gmax,p,fpositron)
          type (emis), intent(inout) :: e
-         real, intent(in) :: gmax,p
+         real, intent(in) :: gmax,p,fpositron
          real, intent(in), dimension(:) :: gmin
-         e%p=p; e%gmin=gmin; e%gmax=gmax
+         e%p=p; e%gmin=gmin; e%gmax=gmax; e%fpositron=fpositron
          end subroutine emis_model_synchpl
 
          subroutine emis_model_interp(e,nfreq,freq)
@@ -894,9 +894,11 @@
          real, dimension(:), intent(in) :: freq
          end subroutine emis_model_interp
 
-         subroutine emis_model_synchth(e,mu)
+         subroutine emis_model_synchth(e,mu,fpositron)
          type (emis), intent(inout) :: e
+         real, intent(in) :: fpositron
          real, dimension(:), intent(in) :: mu
+         e%fpositron=fpositron
          end subroutine emis_model_synchth
 
          subroutine emis_model_lambda(e)

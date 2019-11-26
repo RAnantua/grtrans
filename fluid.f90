@@ -70,7 +70,7 @@
 ! added sigcut here instead of in fluid
       type source_params
 !        real(kind=8), dimension(:), allocatable :: mdot,lleddeta,mu
-        real(kind=8) :: nfac,bfac,mbh,mdot,p1,p2,gmax,gminval, &
+        real(kind=8) :: nfac,bfac,mbh,mdot,p1,p2,gmax,fpositron,gminval, &
              jetalphaval,muval,sigcut,ximax,betaeconst
         real(kind=8), dimension(:), allocatable :: gmin,jetalpha,mu
         integer :: type
@@ -1362,7 +1362,7 @@
              bmag,n,t,nnth
 !        real, dimension(size(x0)) :: g00,grr,ur
 !interim variables
-        real, dimension(size(x0)) :: ub,aleph,bb
+        real, dimension(size(x0)) :: ub,aleph,gfac,bb
         real, dimension(size(x0)) :: rr, rho2,psi4,stheta
 !rms related variables
         real :: rms
@@ -1405,6 +1405,7 @@
 
         u0 = calc_u0(metric,dble(riaf_vr),dble(riaf_vth),dble(riaf_omega))
         fu = rms_vel(dble(a),x0%data(3),x0%data(2))
+
         where(rr.lt.rms)
            f%u%data(1) = fu%data(1)
            f%u%data(2) = fu%data(2)
@@ -1417,20 +1418,28 @@
            f%u%data(4) = riaf_omega*f%u%data(1)
         endwhere
 
-!        f%u%data(1) = calc_u0(metric,vr,vth,vphi)
-!        f%u%data(2) = vr*f%u%data(1)
-!        f%u%data(3) = vth*f%u%data(1)
-!        f%u%data(4) = vphi*f%u%data(1)
+        ! Radial magnetic field
+        !aleph = -1.*(metric(:,4)*f%u%data(1)+metric(:,10)*f%u%data(4)) &
+        !     /(metric(:,1)*f%u%data(1)+metric(:,4) * f%u%data(4))
+        !bb = metric(:,1)*aleph*aleph + metric(:,10) + 2.*metric(:,4)*aleph !I hope this is never negative
+        !f%b%data(4) = bmag/sqrt(bb) !what sign?
+        !f%b%data(3) = 0d0
+        !f%b%data(2) = 0d0
+        !f%b%data(1) = aleph * f%b%data(4)s
 
-        aleph = -1.*(metric(:,4)*f%u%data(1)+metric(:,10)*f%u%data(4)) &
-             /(metric(:,1)*f%u%data(1)+metric(:,4) * f%u%data(4))
-!b0 = aleph*b_phi
-        bb = metric(:,1)*aleph*aleph + metric(:,10) + 2.*metric(:,4)*aleph !I hope this is never negative
-!bb*b_phi**2. = Bmag**2.
-        f%b%data(4) = bmag/sqrt(bb) !what sign?
-        f%b%data(3) = 0d0
-        f%b%data(2) = 0d0
-        f%b%data(1) = aleph * f%b%data(4)
+        ! Toroidal magnetic field (!AC -- copied from fluid_model_hotspot.f90)
+         gfac=1d0/sqrt((metric(:,10)*metric(:,1)-metric(:,4)*metric(:,4))* & 
+           (metric(:,10)*f%u%data(4)*f%u%data(4)+f%u%data(1)* & 
+           (2d0*metric(:,4)*f%u%data(4)+metric(:,1)*f%u%data(1))))
+         f%b%data(1)=bmag*gfac*abs(metric(:,10)*f%u%data(4)+metric(:,4)*f%u%data(1))
+         f%b%data(4)=-bmag*sign(1d0,metric(:,10)*f%u%data(4)+metric(:,4)*f%u%data(1)) &
+           *(f%u%data(1)*metric(:,1)+metric(:,4)*f%u%data(4))*gfac
+         f%b%data(2)=0d0
+         f%b%data(3)=0d0
+
+        call assign_metric(f%b,transpose(metric))
+        call assign_metric(f%u,transpose(metric))
+        f%bmag = sqrt(f%b*f%b)
         f%rho = n
         f%p = t
         f%bmag = bmag

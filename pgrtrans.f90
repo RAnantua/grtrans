@@ -12,7 +12,7 @@
           subroutine grtrans_main(standard,mumin,mumax,nmu,phi0,spin,&
             uout,uin, rcut, nrotype, gridvals, nn,i1,i2,fname, dt, nt, nload, &
             nmdot, mdotmin, mdotmax,ename, mbh, nfreq, fmin, fmax, muval,&
-            gmin, gmax,p1, p2, jetalpha, stype,use_geokerr, nvals, iname,&
+            gmin, gmax,p1, p2, fpositron, jetalpha, stype,use_geokerr, nvals, iname,&
             cflag, extra, debug,outfile, fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix, &
             fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit,frspot,fr0spot,fn0spot,ftscl,frscl, &
             fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol,fmdot,fnscl,fnnthscl,fnnthp,fbeta, &
@@ -38,7 +38,7 @@
             integer :: nro,nphi,nup,tempi
             logical, intent(in) :: use_geokerr
             real(kind=8), intent(in) :: mumax,mumin,rcut,mbh,uout,uin, & 
-                 fmin,fmax,dt,mdotmin,mdotmax,phi0,muval,gmin,gmax,p1,p2,jetalpha
+                 fmin,fmax,dt,mdotmin,mdotmax,phi0,muval,gmin,gmax,p1,p2,fpositron,jetalpha
             real(kind=8) :: a1,a2,b1,b2
             character(len=100), intent(in) :: ename,fname,iname,stype
             character(len=300) :: outfile
@@ -116,7 +116,7 @@
             ! these can later be added to a loop over emis parameter structures
             !       eparams%gmin=gmin; 
             eparams%gmax=gmax; eparams%p1=p1
-            eparams%p2=p2;
+            eparams%p2=p2; eparams%fpositron=fpositron
             allocate(eparams%otherargs(nepotherargs))
             eparams%otherargs = epotherargs
             eparams%coefindx = epcoefindx
@@ -132,13 +132,16 @@
                sparams(iii)%gmax=gmax
                sparams(iii)%p1=p1
                sparams(iii)%p2=p2
+               sparams(iii)%fpositron=fpositron
                sparams(iii)%sigcut=sigcut
                sparams(iii)%betaeconst=betaeconst
                sparams(iii)%ximax=ximax
                call assign_source_params_type(sparams(iii),stype)
             enddo
             allocate(c(NCAMS))
-            if(outfile.ne."") write(6,*) 'outfile grtrans: ',outfile, NCAMS
+            !if(outfile.ne."") then
+            !write(6,*) 'outfile grtrans: ', outfile !, NCAMS
+            !endif
             do m=1,NCAMS
                call initialize_raytrace_camera(c(m),nro,nphi,nvals,nextra)
             enddo
@@ -158,10 +161,12 @@
 !            cflag, extra, debug, outfile
 !            write(6,*) 'emis args: ',epotherargs,epcoefindx
             write(6,*) 'call assign_fluid_args'
-            call assign_fluid_args(fargs,fdfile,fhfile,fgfile,fsim,fnt,findf,fnfiles,fjonfix, &
+            call assign_fluid_args(fargs,fdfile,fhfile,fgfile,fsim,fnt, &
+            findf,fnfiles, fjonfix, &
             fnw,fnfreq_tab,fnr,foffset,fdindf,fmagcrit,frspot,fr0spot,fn0spot,ftscl,frscl, &
             fwmin,fwmax,ffmin,ffmax,frmax,fsigt,ffcol,fmdot,mbh,fnscl,fnnthscl,fnnthp,fbeta, &
-            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout,fscalefac,sigcut,betaeconst,ximax)
+            fbl06,fnp,ftp,frin,frout,fthin,fthout,fphiin,fphiout, &
+            fscalefac,sigcut,betaeconst,ximax)
             write(6,*) 'load fluid model ',fname
             call load_fluid_model(fname,spin,fargs)
 
@@ -178,7 +183,6 @@
                   write(6,*) 'grtrans nload gt 1 loop',size(gargs%t0),allocated(gargs%t0),gargs%nup
                   !write(6,*) 'i1 i2: ',i1,i2
                   !$omp parallel do private(i) shared(gargs)
-!                  do i=1,c(1)%nx*c(1)%ny
                   do i=i1,i2
                      call initialize_geo_tabs(gargs,i)
                   enddo
@@ -197,9 +201,9 @@
                wtime = omp_get_wtime()
                do l=1,nt
                   !       write(6,*) 'pre loop spin: ',spin,gargs%a
-!!!!$omp parallel do schedule(static,1) private(i) shared(gargs,gunit,c,j,nt,l,spin, &
-!!!!!$omp& iname,ename,fname,sparams,eparams,nfreq,nparams,freqs,nup,i1,i2,extra,debug)
-!*$* ASSERT DO(SERIAL)
+!$omp parallel do schedule(static,1) private(i) shared(gargs,gunit,c,j,nt,l,spin, &
+!$omp& iname,ename,fname,sparams,eparams,nfreq,nparams,freqs,nup,i1,i2,extra,debug)
+                 !*$* ASSERT DO(SERIAL)
                   do i=i1,i2
 !                     write(6,*) 'i: ',i,iname,ename
 !                  do i=15501,15999
@@ -210,7 +214,7 @@
                      sparams,eparams,nfreq,nparams,freqs,nup,extra,debug)
                   enddo
 !       write(6,*) 'after loop i'
-!!!!$omp end parallel do
+!$omp end parallel do
 !       write(6,*) 'del geokerr args before'
                   if(l.lt.nt) call advance_fluid_timestep(fname,dt)
                enddo
@@ -238,7 +242,7 @@
                     uout,uin, rcut, nrotype, gridvals, nn, &                                      
                     fname, dt, nt, nload, nmdot, mdotmin, mdotmax, &                              
                     ename, mbh, nfreq, fmin, fmax, muval, gmin, gmax,&                            
-                    p1, p2, jetalpha, stype, &                                                    
+                    p1, p2, fpositron, jetalpha, stype, &                                                    
                     use_geokerr, nvals, iname, extra)     
                ivals(:,:,m)=dble(c(m)%pixvals)
 !               ab(:,:,m)=c(m)%pixloc

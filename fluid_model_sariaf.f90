@@ -2,7 +2,7 @@
 ! Semi-analytic RIAF model from Yuan, Quataert, Narayan (2003)
 ! And Broderick+ (2009)
 
-  use phys_constants, only: c2, pi, mp
+  use phys_constants, only: k,c2, pi, mp
 
   implicit none
 
@@ -63,6 +63,7 @@
       else
          riaf_bl06 = 0
       endif
+      write(6,*) riaf_bl06
       write(6,*) 'fluid model sariaf inputs: ',riaf_pnth,riaf_n0,riaf_t0,riaf_nnth0,riaf_beta
     end subroutine init_sariaf
 
@@ -126,7 +127,10 @@
          riaf_nenth = riaf_nnth0 * ((riaf_a2)**(-riaf_pnth))*exp(-.5*(riaf_z/riaf_a2)**2.)
          riaf_te = riaf_t0 * (riaf_r)**(-0.84) !will return p0 eq
       endif
+
+      !AC -- changed to use actual Te
       riaf_B = sqrt(8.*pi* riaf_neth * mp * c2 / riaf_rs / 12. / riaf_beta)
+
       riaf_vr = 0.*riaf_r!riaf_compare*riaf_urims/riaf_utims  !what is vr?
       riaf_vth = 0.*riaf_r
       riaf_omega = 1./(riaf_r**(3./2.)+riaf_a) !*(1.-riaf_compare) + riaf_compare*riaf_uphims/riaf_utims

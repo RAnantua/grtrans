@@ -8,7 +8,7 @@
       namelist /geodata/   standard,mumin,mumax,nmu,phi0,spin, uout,uin, rcut, &
        nrotype, gridvals, nn, i1, i2, extra, debug
       namelist /fluiddata/ fname, dt, nt, nload, nmdot, mdotmin, mdotmax, sigcut, betaeconst,ximax
-      namelist /emisdata/  ename, mbh, nfreq, fmin, fmax, muval, gmin, gmax, p1, p2, jetalpha, &
+      namelist /emisdata/  ename, mbh, nfreq, fmin, fmax, muval, gmin, gmax, p1, p2, fpositron, jetalpha, &
            stype, delta, nweights, coefindx
       namelist /general/   use_geokerr, nvals, iname, cflag
 ! namelists for fluid models
@@ -23,7 +23,7 @@
            nload,extra,i1,i2,debug
       logical :: use_geokerr
       real(kind=8) :: mumax,mumin,spin,rcut,a1,a2,b1,b2,mbh,uout,uin, & 
-           fmin,fmax,dt,mdotmin,mdotmax,phi0,muval,gmin,gmax,p1,p2, &
+           fmin,fmax,dt,mdotmin,mdotmax,phi0,muval,gmin,gmax,p1,p2,fpositron, &
            jetalpha, delta, sigcut, betaeconst,ximax
       character(len=250) :: ename,fname,iname,stype
       real(kind=8), dimension(:), allocatable :: freqs,mdots,mu0

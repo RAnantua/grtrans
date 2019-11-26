@@ -4,7 +4,8 @@
 
       real(kind=8), dimension(:), allocatable :: gxvals, xvals
       real(kind=8), dimension(:), allocatable :: gyvals,ypvals,yvvals,yavals, &
-       yavvals,yapvals
+           yavvals,yapvals
+      !$omp threadprivate(gxvals,xvals,gyvals,ypvals,yvvals,yavals,yavvals,yapvals)
       contains
 
       function gxnum(x,p,ix,iy) result(yy)
@@ -522,7 +523,7 @@
       endif
       end subroutine initialize_polsynchpl
   
-      subroutine polsynchpl(nu,nnth,b,th,p,gmin,gmax,e)
+      subroutine polsynchpl(nu,nnth,b,th,p,gmin,gmax,fpositron,e)
       use phys_constants, ec=>e
       ! Compute polarized synch from PL dist from Westford (1959)
       ! JAD 4/7/2011
@@ -538,7 +539,7 @@
       real(kind=8), dimension(size(b)) :: xmin,xmax
       real(kind=8), dimension(size(b)) :: gafac,gapfac, &
       gavfac,gxfac,gpfac,gvfac
-      real(kind=8), intent(in) :: gmax
+      real(kind=8), intent(in) :: gmax,fpositron
       real(kind=8) :: nucfloor,nufloor,thsafe
       zero=0d0; nucfloor=1d0; nufloor=1d-10; thsafe=1d-10
       tanth=tan(th)+sign(1d0,cos(th))*thsafe
@@ -585,7 +586,23 @@
       ai=afac*gafac
       aq=afac*gapfac
       av=afac*4d0/3d0/tanth*gavfac*(2d0*omega/3d0/omega0) &
-       **(-1d0/2d0)
+           **(-1d0/2d0)
+
+      !AC 11/25/2019 -- add positrons
+      if((fpositron.ge.0).and.(fpositron.le.1).and.(.not.isnan(fpositron))) then
+         ji = ji*(1d0+fpositron)
+         jq = jq*(1d0 +fpositron)
+         jv = jv*(1d0 -fpositron)
+
+         ai = ai*(1d0+fpositron)
+         aq = aq*(1d0 +fpositron)
+         av = av*(1d0 -fpositron)
+
+         kstarq = kstarq*(1d0 +fpositron)
+         kstarv = kstarv*(1d0 -fpositron)
+      endif
+
+      
       e(:,1)=ji; e(:,2)=jq; e(:,3)=0d0; e(:,4)=jv
       e(:,5)=ai; e(:,6)=aq; e(:,7)=0d0; e(:,8)=av
       e(:,9)=kstarq; e(:,10)=0d0; e(:,11)=kstarv
@@ -694,7 +711,7 @@
 
       end subroutine synchpl
 
-      subroutine polsynchth(nu,n,b,t,theta,e)
+      subroutine polsynchth(nu,n,b,t,theta,fpositron,e)
       use phys_constants, ec=>e
       use bessel, only: besselk0,besselk1,besselk
       implicit none
@@ -702,6 +719,7 @@
       ! coefficients in ultrarel limit using formulas from Huang et al
       ! (2009) and Shcherbakov (2008) for transfer
       ! JAD 1/29/2010
+      real(kind=8), intent(in) :: fpositron
       real(kind=8), intent(in), dimension(:) :: nu,n,t,b,theta
       real(kind=8), intent(out), dimension(size(n),11) :: e
       real(kind=8), dimension(size(n)) :: thetae,nuc,xm,ji, &
@@ -800,7 +818,6 @@
       rhov=2d0*pi*nu/c*eps12
       rhoq=2d0*pi*nu/2d0/c*eps11m22
 
-
 ! confusion about sign of rhoq. Shcherbakov (2008) disagrees with Huang & Shcherbakov (2011). Statement is different basis vectors. Basis looks identical between SH10, which I follow, and HS11. So I did signs as in Huang & Shcherbakov.
 ! limiting case for rhoq for small \nu / \nu_T where S08 approximations break down:
 !      rhoqlim=2d0**(2d0/3d0)/3d0**(7d0/2d0)*pi*n*ec**2d0/m/c/thetae**3/nuc* &
@@ -817,6 +834,24 @@
 ! w/o coupled absorption:
 !      aq=0.; av=0.
 
+      !AC 11/25/2019 -- add positrons
+      !write(6,*) 'fpositron',fpositron
+      if((fpositron.gt.0).and.(fpositron.le.1).and.(.not.isnan(fpositron))) then
+         ji = ji*(1d0 +fpositron)
+         jq = jq*(1d0 +fpositron)
+         ju = ju*(1d0 +fpositron)
+         jv = jv*(1d0 -fpositron)
+
+         ai = ai*(1d0 +fpositron)
+         aq = aq*(1d0 +fpositron)
+         au = au*(1d0 +fpositron)
+         av = av*(1d0 -fpositron)
+
+         rhoq = rhoq*(1d0 +fpositron)
+         rhou = rhou*(1d0 +fpositron)
+         rhov = rhov*(1d0 -fpositron)
+      endif
+      
       if(any(isnan(jq))) then 
          write(6,*) "nan in jq"
       endif
