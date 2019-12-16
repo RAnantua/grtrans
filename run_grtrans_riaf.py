@@ -10,7 +10,7 @@ import grtrans_batch as gr
 import matplotlib.pyplot as plt
 import scipy.ndimage.filters as filt
 
-ang=45
+ang=60
 mu = np.cos(ang*np.pi/180.)
 size  = 25.
 uout = 1./(2*size)
@@ -36,9 +36,11 @@ TSCL=1.7e11
 NNTHSCL=8.e4
 BETA=3.3
 PNTH=2.9
-FPOSITRON=0.0  #0 <npositron/nelectron <1
+FPOSITRON=0.5  #0 <npositron/nelectron <1
 
 name = ('riaf_%0.1f_'%FPOSITRON)+str(ang)
+FNAME = ('riaf_%0.1f_'%FPOSITRON)+str(ang)
+
 def main():
     # run grtrans
 
@@ -50,9 +52,9 @@ def main():
                            nfreq=1,fmin=RF,fmax=RF,
                            gmin=100., p2=2.25, p1=2.25,
                            snscl=NSCL, ntscl=TSCL, snnthscl=NNTHSCL, 
-                           snnthp=PNTH, sbeta=BETA, sbl06=1,
+                           snnthp=PNTH, sbeta=BETA, sbl06=0,
                            fpositron=FPOSITRON,
-                           ename='POLSYNCHTH',
+                           ename='HYBRIDTHPL',
                            nvals=4,
                            spin=0.,standard=1,
                            uout=uout,
@@ -76,10 +78,36 @@ def main():
 
     tmax=5.e10
     pmax=2.e10
+    save_grtrans_image(x)
     display_grtrans_image(x,tmax=tmax,pmax=pmax)
     #x.disp_grtrans_image()
     #x.disp_pol_map()
 
+def save_grtrans_image(grt_obj):
+    """quick save, not ehtim compatible"""
+    I_im = grt_obj.ivals[:,0,0].reshape(npix,npix).flatten()
+    Q_im = grt_obj.ivals[:,1,0].reshape(npix,npix).flatten()
+    U_im = grt_obj.ivals[:,2,0].reshape(npix,npix).flatten()
+    V_im = grt_obj.ivals[:,3,0].reshape(npix,npix).flatten()
+
+    # convert to Tb
+    factor = 3.254e13/(RF**2 * psize_rad**2)
+    I_im *= factor
+    Q_im *= factor
+    U_im *= factor
+    V_im *= factor
+
+    x = np.array([[i for i in range(npix)] for j in range(npix)]).flatten()
+    y = np.array([[j for i in range(npix)] for j in range(npix)]).flatten()
+
+    x -= npix/2
+    y -= npix/2
+    x = x*psize_uas
+    y = y*psize_uas
+
+    outdat = np.vstack((x.T,y.T,I_im.T,Q_im.T,U_im.T,V_im.T)).T
+    np.savetxt('../rrjet_and_riaf/'+FNAME,outdat)
+    return
 
 def display_grtrans_image(x,nvec=25,veccut=0.005,tmax=1.e10,pmax=1.e10,blur_kernel=0):#1.25):
     plt.close('all')

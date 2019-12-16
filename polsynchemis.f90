@@ -544,25 +544,46 @@
       zero=0d0; nucfloor=1d0; nufloor=1d-10; thsafe=1d-10
       tanth=tan(th)+sign(1d0,cos(th))*thsafe
       sinth=sin(th)+thsafe
-!      n=n ; nnth=nnth
-!      b=vars%bcgs ; t=vars%tcgs ; p=vars%p
-!      gmin=vars%gmin ; gmax=vars%gmax ; th=vars%incang
-!      write(6,*) 'polb: ',b,nnth,nu,p
- !     write(6,*) 'polb: ',b
- !     write(6,*) 'poln: ',nnth
- !     write(6,*) 'polnu: ',nu
- !     write(6,*) 'polp: ',p
-!      nub=ec*b/m/c/2d0/pi;
+!     n=n ; nnth=nnth
+!     b=vars%bcgs ; t=vars%tcgs ; p=vars%p
+      !     gmin=vars%gmin ; gmax=vars%gmax ; th=vars%incang
+      !if(maxval(b)>0..and.maxval(nnth)>0.) then
+      !   write(6,*) 'polb: ',maxval(b),maxval(nnth),maxval(p)
+      !endif
+      
+!     write(6,*) 'polb: ',b
+!     write(6,*) 'poln: ',nnth
+!     write(6,*) 'polnu: ',nu
+!     write(6,*) 'polp: ',p
+!     nub=ec*b/m/c/2d0/pi;
       nubperp=ec*B/m/c/2d0/pi*sinth+nufloor
-      nucmin=3d0/2d0*nubperp*gmin**2; nucmax=3d0/2d0*nubperp*gmax**2
+      nucmin=3d0/2d0*nubperp*gmin**2;
+      nucmax=3d0/2d0*nubperp*gmax**2
       omega0=nubperp*2d0*pi; omega=nu*2d0*pi
       xmin=nu/nucmin ; xmax=nu/nucmax
-! CHANGE TO BL09 WAY TO TEST FFJET
-!      xmin=1e10; xmax=1d-10
-      A=(p-1d0)*nnth/(gmin**(1d0-p)-gmax**(1d0-p))
 !      write(6,*) 'x: ',xmin,xmax,p,gmin,gmax
-      call get_polsynchpl_facs(xmin,xmax,p,gxfac,gpfac,gvfac, &
-       gafac,gapfac,gavfac)
+
+     
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+      !AC -- simple approx change, taking gmax->infty
+      !and extending limits of integration from 0 - infty
+
+      ! CORRECT
+      !A=(p-1d0)*nnth/(gmin**(1d0-p)-gmax**(1d0-p))
+      !call get_polsynchpl_facs(xmin,xmax,p,gxfac,gpfac,gvfac,gafac,gapfac,gavfac)
+
+      ! APPROX
+      A=(p-1d0)*nnth/(gmin**(1d0-p))
+      gxfac = (2d0**((p-3d0)/2d0))*GAMMA(p/4d0+7d0/12d0)*GAMMA(p/4d0-1d0/12d0)*(p + 7d0/3d0)/(p + 1d0)
+      gpfac = (2d0**((p-3d0)/2d0))*GAMMA(p/4d0+7d0/12d0)*GAMMA(p/4d0-1d0/12d0)
+      gvfac = (2d0**(p/2d0-1d0))*GAMMA(p/4d0+1d0/3d0)*GAMMA(p/4d0+2d0/3d0)*(p + 2d0)/p
+
+      gafac = (2d0**(p/2d0 - 1d0))*GAMMA(p/4d0+5d0/6d0)*GAMMA(p/4d0+1d0/6d0)*(p + 10d0/3d0)/(p + 1d0)
+      gapfac = (2d0**(p/2d0 - 1d0))*GAMMA(p/4d0+5d0/6d0)*GAMMA(p/4d0+1d0/6d0)*(p + 2d0)/(p + 1d0)
+      gavfac = (2d0**((p - 1d0)/2d0))*GAMMA(p/4d0+7d0/12d0)*GAMMA(p/4d0+11d0/12d0)*(p + 3d0)/(p + 1d0)
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+
+      ! emission 
       jfac=A*ec*ec/c*sqrt(3d0)/4d0* &
       (3d0*nubperp/2d0/nu)**((p-1d0)/2d0)*nubperp
 !      write(6,*) 'jfac: ',jfac,th,A
@@ -570,17 +591,19 @@
       jq=jfac*gpfac
       jv=jfac*4d0/3d0/tanth* &
       sqrt(3d0*nubperp/2d0/nu)*gvfac
+
+      ! conversion/rotation
       alpha=(p-1)/2d0
       kperp=A*ec*ec/m/c/nubperp
-!      nubperp=ec*B*sinth/2d0/pi/m/c
       nui=gmin*gmin*nubperp
       kstaralphaq=1d0
       kstaralphav=2d0*(alpha+3d0/2d0)/(alpha+1)
       kstarq=-kstaralphaq*kperp*(nubperp/nu)**3d0*gmin**(-2d0*alpha+1d0)* &
       (1d0-(nui/nu)**(alpha-1d0/2d0))*(alpha-1d0/2d0)**(-1d0)!*gapfac
-!      kstarq=merge(kstarq,zero,nu.gt.nui)
       kstarv=kstaralphav*kperp*(nubperp/nu)**2d0*log(gmin)* &
-      gmin**(-2*(alpha+1))/tanth!*gavfac
+           gmin**(-2*(alpha+1))/tanth!*gavfac
+
+      ! absorption
       afac=(2d0*pi)**3*A*ec*ec*sqrt(3d0)*omega0*(p+2d0)/32d0/ &
        pi**2/m/c/omega**2*(2d0*omega/3d0/omega0)**(-p/2d0)
       ai=afac*gafac
@@ -590,19 +613,19 @@
 
       !AC 11/25/2019 -- add positrons
       if((fpositron.ge.0).and.(fpositron.le.1).and.(.not.isnan(fpositron))) then
-         ji = ji*(1d0+fpositron)
-         jq = jq*(1d0 +fpositron)
-         jv = jv*(1d0 -fpositron)
+         !write(6,*) 'fpositron', fpositron
+         ji = ji*(1d0 + fpositron)
+         jq = jq*(1d0 + fpositron)
+         jv = jv*(1d0 - fpositron)
 
-         ai = ai*(1d0+fpositron)
-         aq = aq*(1d0 +fpositron)
-         av = av*(1d0 -fpositron)
+         ai = ai*(1d0 + fpositron)
+         aq = aq*(1d0 + fpositron)
+         av = av*(1d0 - fpositron)
 
-         kstarq = kstarq*(1d0 +fpositron)
-         kstarv = kstarv*(1d0 -fpositron)
+         kstarq = kstarq*(1d0 + fpositron)
+         kstarv = kstarv*(1d0 - fpositron)
       endif
 
-      
       e(:,1)=ji; e(:,2)=jq; e(:,3)=0d0; e(:,4)=jv
       e(:,5)=ai; e(:,6)=aq; e(:,7)=0d0; e(:,8)=av
       e(:,9)=kstarq; e(:,10)=0d0; e(:,11)=kstarv

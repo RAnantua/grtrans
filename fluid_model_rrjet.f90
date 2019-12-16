@@ -60,14 +60,16 @@ module fluid_model_rrjet
         omega = 0.15*exp(-0.3*xi*xi)
         phi = tanh(0.3*xi) 
         phiprime = 0.3*(1.- phi*phi) 
-        current = -2.*omega*xi*phiprime
+        current = -2.*xi*omega*phiprime
 
         ! Get the B-field vector in cylindrical coordinates
-        ! AC make flux through  horizon / normalization a free parameter ?? 
-        Bs = 1.e4 * s*phiprime / (2.*pi*z*z)
-        Bz = 1.e4 * phiprime / (2.*pi*z)
-        Bphi = 1.e4 * current / (2*pi*s)
-        Bphi = Bphi / s !AC ?? -- put in coordinate basis
+        ! !AC - in dimensionless units, the flux through the horizon is 1
+        ! !AC - we convert to physical units in  convert_fluidvars_rrjet in fluid.f90
+        Bs = 1.02e4 * s * phiprime / (2.*pi*z*z)
+        Bz = 1.02e4 * phiprime / (pi*z)
+        !Bz = 1.02e4 * phiprime / (2.*pi*z)
+        Bphi = 1.02e4 * current / (2*pi*s)
+        Bphi = Bphi / s !AC -- put in coordinate basis
         
         ! Get the three-velocity in cylindrical coordinates
         logz = log10(z)
@@ -75,7 +77,7 @@ module fluid_model_rrjet
         Vz = V0z * exp(-0.001 * xi**4)
         Vs = s*Vz / (2.* z)
         Vphi = s*omega*(1.-Vz)
-        Vphi = Vphi / s !AC ?? -- put in coordinate basis
+        Vphi = Vphi / s !AC -- put in coordinate basis
         
         ! Transform the velocity and B-field to spherical coordinates
         Br = s*Bs/zr + z*Bz/zr
@@ -83,8 +85,7 @@ module fluid_model_rrjet
         Vr = s*Vs/zr + z*Vz/zr
         Vth = z*Vs/(zr*zr) - s*Vz/(zr*zr)
 
-
-        ! Find u0 and convert V -> u
+        ! Find the timelike u0 and convert V -> u
         metric = kerr_metric(zr,real(x0%data(3)),a)
         u0 = calc_u0(metric,dble(Vr),dble(Vth),dble(Vphi))
         
@@ -104,43 +105,30 @@ module fluid_model_rrjet
         b0 = b*u
         
         b%data(1)=b0
-        b%data(2)=u0*(Br + b0*u%data(2))
-        b%data(3)=u0*(Bth + b0*u%data(3))
-        b%data(4)=u0*(Bphi + b0*u%data(4))
-                
-!      write(6,*) 'after assign'
-        
+        b%data(2)=(Br + b0*u%data(2))/u0
+        b%data(3)=(Bth + b0*u%data(3))/u0
+        b%data(4)=(Bphi + b0*u%data(4))/u0
+        !b%data(2)=u0*(Br + b0*u%data(2))
+        !b%data(3)=u0*(Bth + b0*u%data(3))
+        !b%data(4)=u0*(Bphi + b0*u%data(4))
+                        
         ! Protect azimuthal velocities at poles
         ! Compute magnitude of interpolated b-field
         ! and force b^2 > 0 (need to look into numerical issues here):
         call assign_metric(b,transpose(kerr_metric(zr,real(x0%data(3)),a)))
-        bmag=b*b; bmag=merge(bmag,dzero,bmag.ge.0d0)
+        bmag=b*b;
+        bmag=merge(bmag,dzero,bmag.ge.0d0)
         bmag=sqrt(bmag)
 !        write(6,*) 'maxr: ',maxval(uniqr),maxval(zr)
 !        write(6,*) 'bmag: ',maxval(bmag),minval(bmag)
 !        write(6,*) 'bmag: ',bmag
 
         ! Find the nonthermal electron pressure (betae * magnetic pressure)
-        p = 0.5 * betaeconst * (bmag*bmag)
-        rho = p ! Convert pressure later to neth using emis params
+        p = 0.5 * betaeconst * (bmag*bmag) !/ (8*pi)
+        rho = p ! Convert pressure to number density in  convert_fluidvars_rrjet using emis params
 
-! ANDREW ?? 
-! Correct \theta, \phi components for reflecting sol'n
-! assume reflection is that \hat{z} stays same for field (flux),
-! then assume that \hat{\phi} stays unchanged (L_z)
-! flips for velocity. so need to flip v^th and b^r. 
-!        vtl0=sign(fone,zm)*vtl0
-!        b%data(3)=sign(fone,zm)*b%data(3)
-!        b%data(2)=sign(fone,zm)*b%data(2)
-!        vpl0=sign(fone,zm)*vpl0
-!        b%data(4)=sign(fone,zm)*b%data(4)
-        
-
-!        write(6,*) 'leaving rrjet vals',bmag
-!        write(6,*) 'udotu: ',u*u
-
-        ! Zero everything where xi>ximax
-        where(xi>ximax)
+        ! Zero everything where xi>ximax and z<2
+        where((xi.gt.ximax).or.(abs(z).le.2d0))
            !u%data(1) = dzero;
            !u%data(2) = dzero;
            !u%data(3) = dzero;
@@ -150,12 +138,11 @@ module fluid_model_rrjet
            !b%data(3) = dzero;
            !b%data(4) = dzero;
            rho = dzero;
-           !bmag=dzero;
+           bmag=dzero;
            p=dzero;
         endwhere
         
-! ANDREW ??
-! Cut off emission from below eq. plane:
+        ! !AC Cut off emission from below the eq. plane:
         rho=merge(rho,rho*0.,zm.ge.0)
         p = merge(p,p*0.,zm.ge.0)
         end subroutine rrjet_vals

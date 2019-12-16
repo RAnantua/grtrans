@@ -10,28 +10,34 @@ import grtrans_batch as gr
 import matplotlib.pyplot as plt
 import scipy.ndimage.filters as filt
 
-ang=20
+ang=20.
 name = 'rrjet'+str(ang)
 mu = np.cos(ang*np.pi/180.)
-size  = 100.
-uout = 1./(5*size)
+size  = 300.
+uout = 1./(10*size)
 npix = 100
-ngeo = 500
+ngeo = 5000
 
 cmperMpc = 3.086e24
 MBH = 6.7e9
-DTOBH = 16.7*cmperMpc
+DTOBH = 16.528*cmperMpc
+RADPERUAS = np.pi/180./3600./1.e6
+
 psize_rg = 2*size/npix
 cmperrg = 147708.8 * MBH
 psize_cm = psize_rg * cmperrg
 psize_rad = psize_cm / DTOBH
+psize_uas = psize_rad / RADPERUAS
 
+pp= 2.001
 RF = 43.e9
 cfun = 'jet'
-cfun2 =  'seismic'
+cfun2 = 'seismic'
 RERUN = True
+FNAME = 'grtrans_jet_compare.txt'
 
 def main():
+
     # run grtrans
     x=gr.grtrans()
 
@@ -39,18 +45,22 @@ def main():
                            fname='RRJET',phi0=0.,
                            betaeconst=1.e-4, ximax=10., 
                            nfreq=1,fmin=RF,fmax=RF,
-                           gmin=10., p2=2.1, p1=2.1,
+                           gmin=10., gmax=1.e35, p2=pp, p1=pp,
+                           #ename='SYNCHPL',
                            ename='POLSYNCHPL',
-                           nvals=4,
-                           spin=0.,standard=1,
+                           nvals=4, fpositron=0,
+                           spin=0., standard=1,
                            uout=uout,
                            mbh=MBH,
+                           #epcoefindx=[1,1,1,1,1,1,1],
+                           #epcoefindx=[1,1,1,1,0,0,0],
                            mdotmin=1.57e15,mdotmax=1.57e15,nmdot=1,
                            nmu=1,mumin=mu,mumax=mu,
                            gridvals=[-size,size,-size,size],
                            nn=[npix,npix,ngeo],
                            hindf=1,hnt=1,
                            muval=1.)
+
 
     if RERUN:
         x.run_grtrans()
@@ -59,18 +69,44 @@ def main():
     x.read_grtrans_output()
     x.convert_to_Jy(DTOBH)
 
+    #grt_obj=x
+    save_grtrans_image(x)
     display_grtrans_image(x)
-    #x.disp_grtrans_image()
-    #x.disp_pol_map()
 
+def save_grtrans_image(grt_obj):
+    """quick save, not ehtim compatible"""
+    I_im = grt_obj.ivals[:,0,0].reshape(npix,npix).flatten()
+    Q_im = grt_obj.ivals[:,1,0].reshape(npix,npix).flatten()
+    U_im = grt_obj.ivals[:,2,0].reshape(npix,npix).flatten()
+    V_im = grt_obj.ivals[:,3,0].reshape(npix,npix).flatten()
 
-def display_grtrans_image(x,nvec=20,veccut=0.005,blur_kernel=1.25):
+    # convert to Tb
+    factor = 3.254e13/(RF**2 * psize_rad**2)
+    I_im *= factor
+    Q_im *= factor
+    U_im *= factor
+    V_im *= factor
+
+    x = np.array([[i for i in range(npix)] for j in range(npix)]).flatten()
+    y = np.array([[j for i in range(npix)] for j in range(npix)]).flatten()
+
+    x -= npix/2
+    y -= npix/2
+    x = x*psize_uas
+    y = y*psize_uas
+
+    outdat = np.vstack((x.T,y.T,I_im.T,Q_im.T,U_im.T,V_im.T)).T
+    np.savetxt('../rrjet_and_riaf/'+FNAME,outdat)
+    #np.savetxt('../rrjet_and_riaf/grtrans_jet_compare_positron_noconv.txt',outdat)
+    return
+
+def display_grtrans_image(grt_obj,nvec=20,veccut=0.005,blur_kernel=1.25):
     plt.close('all')
 
-    I_im = x.ivals[:,0,0].reshape(npix,npix)
-    Q_im = x.ivals[:,1,0].reshape(npix,npix)
-    U_im = x.ivals[:,2,0].reshape(npix,npix)
-    V_im = x.ivals[:,3,0].reshape(npix,npix)
+    I_im = grt_obj.ivals[:,0,0].reshape(npix,npix)
+    Q_im = grt_obj.ivals[:,1,0].reshape(npix,npix)
+    U_im = grt_obj.ivals[:,2,0].reshape(npix,npix)
+    V_im = grt_obj.ivals[:,3,0].reshape(npix,npix)
 
     I_im = filt.gaussian_filter(I_im, (blur_kernel, blur_kernel))
     Q_im = filt.gaussian_filter(Q_im, (blur_kernel, blur_kernel))
@@ -157,26 +193,26 @@ def display_grtrans_image(x,nvec=20,veccut=0.005,blur_kernel=1.25):
     plt.ylabel('y/rg')
 
     # display P
-    plt.figure(4)
-    im = plt.imshow(P_im, cmap=plt.get_cmap(cfun), interpolation='gaussian')
-    cb = plt.colorbar(im, fraction=0.046, pad=0.04, orientation="vertical")
-    cb.set_label('Tb (K)', fontsize=14)
-    plt.title(("P, %.2f GHz " % (RF/1e9)), fontsize=16)
-    plt.xticks(xticks[0], xticks[1])
-    plt.yticks(yticks[0], yticks[1])
-    plt.xlabel('x/rg')
-    plt.ylabel('y/rg')
+#    plt.figure(4)
+#    im = plt.imshow(P_im, cmap=plt.get_cmap(cfun), interpolation='gaussian')
+#    cb = plt.colorbar(im, fraction=0.046, pad=0.04, orientation="vertical")
+#    cb.set_label('Tb (K)', fontsize=14)
+#    plt.title(("P, %.2f GHz " % (RF/1e9)), fontsize=16)
+#    plt.xticks(xticks[0], xticks[1])
+#    plt.yticks(yticks[0], yticks[1])
+#    plt.xlabel('x/rg')
+#    plt.ylabel('y/rg')
 
-    # display m
-    plt.figure(5)
-    im = plt.imshow(m_im, cmap=plt.get_cmap('viridis'), interpolation='gaussian')
-    cb = plt.colorbar(im, fraction=0.046, pad=0.04, orientation="vertical")
-    cb.set_label('P/I', fontsize=14)
-    plt.title(("P/I, %.2f GHz " % (RF/1e9)), fontsize=16)
-    plt.xticks(xticks[0], xticks[1])
-    plt.yticks(yticks[0], yticks[1])
-    plt.xlabel('x/rg')
-    plt.ylabel('y/rg')
+#    # display m
+#    plt.figure(5)
+#    im = plt.imshow(m_im, cmap=plt.get_cmap('viridis'), interpolation='gaussian')
+#    cb = plt.colorbar(im, fraction=0.046, pad=0.04, orientation="vertical")
+#    cb.set_label('P/I', fontsize=14)
+#    plt.title(("P/I, %.2f GHz " % (RF/1e9)), fontsize=16)
+#    plt.xticks(xticks[0], xticks[1])
+#    plt.yticks(yticks[0], yticks[1])
+#    plt.xlabel('x/rg')
+#    plt.ylabel('y/rg')
 
     # display I with pol ticks
     plt.figure(6)

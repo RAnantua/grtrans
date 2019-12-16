@@ -1174,24 +1174,51 @@
         type (fluid), intent(in) :: f
         real(kind=8), dimension(size(f%rho)), &
              intent(out) :: ncgs,ncgsnth,bcgs,tcgs
-        real ::  prefac
+        real ::  prefac, prefacOLD, jetflux, conv1, conv2, lcgs
         type (source_params), intent(in) :: sp
+        real(kind=8), dimension(size(f%rho)) :: pcgs, rhocgs
+        
+        ! The physical jet flux in G / cm^2
+        ! !AC - TODO -- make an argument
+        jetflux=1.e34
 
+        ! gravitational radius in cm
+        lcgs=GC*sp%mbh*msun/c**2;
+        
+        ! scale magnetic field to Gauss
+        !conv1 = jetflux / (lcgs*lcgs)
+        conv1 = 1.
+        
+        !f%b%data(1) = f%b%data(1) * conv1
+        !f%b%data(2) = f%b%data(2) * conv1
+        !f%b%data(3) = f%b%data(3) * conv1
+        !f%b%data(4) = f%b%data(4) * conv1
+        !f%bmag = f%bmag * conv1
+        bcgs=f%bmag * conv1
 
+        ! scale fluid pressure \propto B^2
+        !conv2 = conv1*conv1
+        conv2 = 1.
+        pcgs = f%p * conv2
+        
         ! nonthemal number density
-        prefac = 3.*(sp%p2-2.) / ((sp%p2-1.)*m*c2*sp%gminval)
-        ncgsnth= prefac * f%p
-
-        ! field strength
-        bcgs=f%bmag !*sp%bfac;
-
-        !write(6,*) 'prefac', prefac
+        !prefac = 3.*(sp%p2-2.) / (sp%p2-1.)
+        !prefac = prefac * (sp%gminval**(1.-sp%p2) - sp%gmax**(1.-sp%p2))
+        !prefac = prefac / (sp%gminval**(2.-sp%p2) - sp%gmax**(2.-sp%p2)) 
+        prefacOLD = 3.*(sp%p2-2.) / ((sp%p2-1.)*sp%gminval)
+        prefac=prefacOLD
+        
+        rhocgs = prefac * pcgs / c2
+        ncgsnth= prefac * pcgs / (m*c2)
+        
+        !write(6,*) 'prefacOLD', prefacOLD, 'prefac', prefac
         !write(6,*) 'max n', maxval(ncgsnth)
         !write(6,*) 'max b', maxval(bcgs)
         !write(6,*) 'max p', maxval(f%p)
         
         !temperature and thermal energy density is zero
-        ncgs=ncgsnth; tcgs=0.
+        ncgs=ncgsnth;
+        tcgs=0.
         end subroutine convert_fluidvars_rrjet
 
         subroutine convert_fluidvars_hotspot(f,ncgs,ncgsnth,bcgs,tcgs,sp)
